@@ -1,0 +1,25 @@
+.gradle/
+.kotlin/
+build/
+app/build/
+local.properties
+
+# Local run artifacts
+.local-backend/
+dist/
+evidence/
+captures/
+/*.log
+*.hprof
+
+# Signing material and generated APKs
+keystore.properties
+app/keystore/
+*.jks
+*.keystore
+*.apk
+
+# IDE
+.idea/
+*.iml
+.DS_Store

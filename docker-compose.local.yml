@@ -1,0 +1,29 @@
+services:
+  weekly-report-android-local:
+    build:
+      context: ../weekly-report
+      args:
+        APP_VERSION: android-local
+    container_name: weekly-report-android-local
+    ports:
+      # 独立端口，避免与生产/已有实例冲突
+      - "18081:18001"
+    volumes:
+      # 独立数据目录；不碰 weekly-report 仓库里的 data/
+      - ./.local-backend/docker-data:/app/data
+    environment:
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?set JWT_SECRET_KEY before starting the local backend}
+      - DATABASE_URL=sqlite:///./data/weekly_report.db
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:18001/api/v1/health')",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

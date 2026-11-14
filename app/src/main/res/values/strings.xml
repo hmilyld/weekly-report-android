@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">周记</string>
+    <string name="widget_name">今日日报</string>
+    <string name="widget_description">在主屏查看今天记录，一点直达编辑。</string>
+    <string name="widget_empty">今天还没有记录，点这里写一条。</string>
+    <string name="widget_action">记一笔</string>
+</resources>
