@@ -30,7 +30,7 @@ $env:GRADLE_USER_HOME = 'E:\Androiddev\gradle-home'
 约束：
 
 - `minSdk 26`、`targetSdk 35`。
-- Lint 必须 0 errors；当前有约 30 条 warning，新增 error 不允许。
+- Lint 必须 0 errors；当前约 50 条 warning（多为版本目录里的依赖升级提示，其次是 `AppDatabase.kt` 的 `SQLiteDatabase.transaction` 建议），新增 error 不允许。
 - Release 使用 R8；新增反射/序列化模型时检查 `app/build/outputs/mapping/release/seeds.txt` 中 `$$serializer` 是否保留。
 - 不提交 `keystore.properties`、`*.jks`、`dist/`、`evidence/`、`local.properties`、`build/`、`.gradle/`、`.kotlin/`。
 
@@ -106,6 +106,8 @@ AppDatabase (SQLite) ──► outbox ──► SyncEngine ──► ApiClient
 - 页面标题统一使用 `ui/components/Common.kt` 的 `ScreenHeader`。它的 kicker 行固定最小高度 `48dp`，以确保有/无右侧操作按钮的页面标题对齐；不要改回自适应高度。
 - 设计语言：暖纸色 + 墨色 + 朱红强调色；标题衬线体，正文无衬线；间距使用 `Spacing`。
 - 设置页的多个操作按钮使用 `FlowRow`（每行最多 2 个）并让文字单行，避免窄屏竖排断字。
+- 所有面向上架界面的中文文案放在 `res/values/strings.xml`，Compose 用 `stringResource`、非 Compose 用 `context.getString`；不要在 Kotlin 里新增中文字面量（`util/`、`network/`、`data/` 的领域错误文本与 ViewModel 的 `_messages` 仍是例外，改动时同步迁移）。
+- 圆角统一取 `MaterialTheme.shapes`（`small`=12dp、`medium`=16dp、`large`=20dp），不要在页面里临时写 `RoundedCornerShape(...)`；颜色只取 `colorScheme` 槽位，Snackbar/Switch 等组件依赖 `inverseSurface`、`surfaceContainerHighest` 等已补齐的槽位。
 - 通知权限入口统一走 `NotificationPermission.openSettings`（系统通知设置页），不要改回 `RequestPermission`：部分 MIUI/HyperOS 运行时弹窗会直接失败或关闭应用；返回时通过 `ON_RESUME` 重新检查权限。
 - 报告页动作分层：编辑/重新生成放在正文上方的文档工具栏，复制/复制并分享留在正文底部；生成状态紧邻工具栏，避免点了重新生成还要向上找提示。
 - 所有可点击元素至少 48dp；破坏性操作必须二次确认。
