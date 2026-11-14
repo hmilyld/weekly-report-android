@@ -65,6 +65,7 @@ class DailyViewModel(
     val messages = _messages.asSharedFlow()
 
     private var loadedOnce = false
+    private var loadSequence = 0L
 
     init {
         load()
@@ -78,17 +79,21 @@ class DailyViewModel(
     }
 
     private suspend fun loadInternal(showLoading: Boolean) {
-        val monday = _state.value.monday
+        val titleMonday = _state.value.monday
+        val sequence = ++loadSequence
         if (showLoading) _state.update { it.copy(loading = true) }
-        val local = repo.weekDays(monday)
-        _state.update { it.copy(days = local.toRows(monday)) }
+        val local = repo.weekDays(titleMonday)
+        if (!isCurrentRequest(titleMonday, sequence)) return
+        _state.update { it.copy(days = local.toRows(titleMonday)) }
         try {
-            repo.refreshWeek(monday)
-            val merged = repo.weekDays(monday)
+            repo.refreshWeek(titleMonday)
+            val merged = repo.weekDays(titleMonday)
+            if (!isCurrentRequest(titleMonday, sequence)) return
             _state.update {
-                it.copy(days = merged.toRows(monday), offline = false, error = null, loading = false)
+                it.copy(days = merged.toRows(titleMonday), offline = false, error = null, loading = false)
             }
         } catch (error: ApiException) {
+            if (!isCurrentRequest(titleMonday, sequence)) return
             if (error.requiresLogin) {
                 _state.update { it.copy(loading = false) }
                 return
@@ -105,6 +110,9 @@ class DailyViewModel(
         }
         loadedOnce = true
     }
+
+    private fun isCurrentRequest(monday: java.time.LocalDate, sequence: Long): Boolean =
+        sequence == loadSequence && _state.value.monday == monday
 
     fun previousWeek() {
         _state.update { it.copy(monday = it.monday.minusDays(7)) }
