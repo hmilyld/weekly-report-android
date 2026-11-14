@@ -13,8 +13,7 @@ enum class ThemeMode(val value: String) {
     DARK("dark");
 
     companion object {
-        fun from(value: String?): ThemeMode =
-            entries.firstOrNull { it.value == value } ?: SYSTEM
+        fun from(value: String?): ThemeMode = entries.firstOrNull { it.value == value } ?: SYSTEM
     }
 }
 

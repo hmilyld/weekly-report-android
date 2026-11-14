@@ -11,7 +11,7 @@ import kotlinx.coroutines.withContext
 
 class ReportRepository(
     private val db: AppDatabase,
-    private val api: ApiClient,
+    private val api: ApiClient
 ) {
     suspend fun weekly(weekStart: String): WeeklyReportDto? = withContext(Dispatchers.IO) {
         try {
@@ -77,8 +77,8 @@ class ReportRepository(
                 cacheKey = weeklyKey(weekStart),
                 content = report.content,
                 modelName = report.modelName,
-                generatedAt = report.generatedAt,
-            ),
+                generatedAt = report.generatedAt
+            )
         )
     }
 
@@ -88,8 +88,8 @@ class ReportRepository(
                 cacheKey = monthlyKey(report.year, report.month),
                 content = report.content,
                 modelName = report.modelName,
-                generatedAt = report.generatedAt,
-            ),
+                generatedAt = report.generatedAt
+            )
         )
     }
 

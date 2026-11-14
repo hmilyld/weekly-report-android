@@ -31,40 +31,40 @@ fun PeriodNavigator(
     onToday: (() -> Unit)?,
     todayLabel: String,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true,
+    enabled: Boolean = true
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         PaperCard {
             Row(
                 modifier = Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.sm),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onPrevious, enabled = enabled) {
                     Icon(
                         Icons.Outlined.ChevronLeft,
-                        contentDescription = stringResource(R.string.common_previous_period),
+                        contentDescription = stringResource(R.string.common_previous_period)
                     )
                 }
                 Column(
                     modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         text = label,
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center,
+                        textAlign = TextAlign.Center
                     )
                     Text(
                         text = caption,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 IconButton(onClick = onNext, enabled = enabled) {
                     Icon(
                         Icons.Outlined.ChevronRight,
-                        contentDescription = stringResource(R.string.common_next_period),
+                        contentDescription = stringResource(R.string.common_next_period)
                     )
                 }
             }
@@ -74,13 +74,13 @@ fun PeriodNavigator(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.xs),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.End
             ) {
                 TextButton(onClick = onToday, enabled = enabled) {
                     Icon(
                         Icons.Outlined.Today,
                         contentDescription = null,
-                        modifier = Modifier.padding(end = Spacing.xs),
+                        modifier = Modifier.padding(end = Spacing.xs)
                     )
                     Text(todayLabel)
                 }

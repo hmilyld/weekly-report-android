@@ -10,7 +10,7 @@ class ApiPayloadsTest {
     fun `string detail is surfaced`() {
         assertEquals(
             "当前密码不正确",
-            ApiPayloads.errorMessage("""{"detail":"当前密码不正确"}""", 402),
+            ApiPayloads.errorMessage("""{"detail":"当前密码不正确"}""", 402)
         )
     }
 

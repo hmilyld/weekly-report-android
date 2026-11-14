@@ -7,7 +7,7 @@ import com.hmilyld.weeklyreport.WeeklyReportApp
 
 class OutboxWorker(
     appContext: Context,
-    params: WorkerParameters,
+    params: WorkerParameters
 ) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result {
         val app = applicationContext as? WeeklyReportApp ?: return Result.success()

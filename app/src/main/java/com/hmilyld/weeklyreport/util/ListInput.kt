@@ -36,7 +36,7 @@ object ListInput {
             // Empty item: Enter removes the marker instead of numbering forever.
             return Edit(
                 value = value.substring(0, lineStart) + value.substring(lineEnd),
-                caret = lineStart,
+                caret = lineStart
             )
         }
 
@@ -46,7 +46,7 @@ object ListInput {
         val newLineEnd = lineEnd
         return Edit(
             value = value.substring(0, newLineEnd) + insertion + tail,
-            caret = newLineEnd + insertion.length,
+            caret = newLineEnd + insertion.length
         )
     }
 

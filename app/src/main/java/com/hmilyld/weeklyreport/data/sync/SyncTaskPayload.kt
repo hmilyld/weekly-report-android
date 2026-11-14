@@ -7,7 +7,7 @@ data class SyncTaskPayload(
     val content: String,
     val deadline: String? = null,
     val includeDeadline: Boolean = false,
-    val isCompleted: Boolean = false,
+    val isCompleted: Boolean = false
 )
 
 /** Pure rule for replaying a locally saved day against the server's current value. */

@@ -14,16 +14,13 @@ object Dates {
 
     fun today(): LocalDate = LocalDate.now()
 
-    fun mondayOf(date: LocalDate): LocalDate =
-        date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    fun mondayOf(date: LocalDate): LocalDate = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
     fun iso(date: LocalDate): String = date.format(ISO)
 
-    fun parseIso(value: String?): LocalDate? =
-        if (value.isNullOrBlank()) null else runCatching { LocalDate.parse(value, ISO) }.getOrNull()
+    fun parseIso(value: String?): LocalDate? = if (value.isNullOrBlank()) null else runCatching { LocalDate.parse(value, ISO) }.getOrNull()
 
-    fun weekDates(monday: LocalDate): List<LocalDate> =
-        (0L..6L).map { monday.plusDays(it) }
+    fun weekDates(monday: LocalDate): List<LocalDate> = (0L..6L).map { monday.plusDays(it) }
 
     fun weekRangeLabel(monday: LocalDate): String {
         val sunday = monday.plusDays(6)
@@ -32,17 +29,13 @@ object Dates {
 
     fun monthLabel(year: Int, month: Int): String = "${year}年${month}月"
 
-    fun weekdayShort(date: LocalDate): String =
-        WEEKDAYS[date.dayOfWeek.value - 1]
+    fun weekdayShort(date: LocalDate): String = WEEKDAYS[date.dayOfWeek.value - 1]
 
-    fun fullDateLabel(date: LocalDate): String =
-        "${date.year}年${date.monthValue}月${date.dayOfMonth}日 · ${weekdayShort(date)}"
+    fun fullDateLabel(date: LocalDate): String = "${date.year}年${date.monthValue}月${date.dayOfMonth}日 · ${weekdayShort(date)}"
 
-    fun monthDay(date: LocalDate): String =
-        "%02d.%02d".format(date.monthValue, date.dayOfMonth)
+    fun monthDay(date: LocalDate): String = "%02d.%02d".format(date.monthValue, date.dayOfMonth)
 
-    fun daysUntil(deadline: LocalDate, today: LocalDate): Long =
-        java.time.temporal.ChronoUnit.DAYS.between(today, deadline)
+    fun daysUntil(deadline: LocalDate, today: LocalDate): Long = java.time.temporal.ChronoUnit.DAYS.between(today, deadline)
 
     /** A deadline today or within two days is urgent; earlier than today is overdue. */
     fun deadlineState(deadline: LocalDate?, today: LocalDate): DeadlineState {
@@ -77,7 +70,7 @@ object Dates {
             local.monthValue,
             local.dayOfMonth,
             local.hour,
-            local.minute,
+            local.minute
         )
     }
 

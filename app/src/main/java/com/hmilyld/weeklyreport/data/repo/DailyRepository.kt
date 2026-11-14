@@ -8,16 +8,16 @@ import com.hmilyld.weeklyreport.data.local.OutboxKind
 import com.hmilyld.weeklyreport.data.sync.SyncScheduler
 import com.hmilyld.weeklyreport.network.ApiClient
 import com.hmilyld.weeklyreport.util.Dates
+import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
 
 class DailyRepository(
     private val db: AppDatabase,
     private val api: ApiClient,
     private val session: SessionManager,
     private val scheduler: SyncScheduler,
-    private val onLocalChange: () -> Unit,
+    private val onLocalChange: () -> Unit
 ) {
     fun owner(): String = session.owner()
 
@@ -45,7 +45,7 @@ class DailyRepository(
             date = key,
             payload = content,
             baseUpdatedAt = existing?.serverUpdatedAt,
-            owner = owner(),
+            owner = owner()
         )
         onLocalChange()
         scheduler.requestDrain()
@@ -60,7 +60,7 @@ class DailyRepository(
             date = key,
             payload = "",
             baseUpdatedAt = existing?.serverUpdatedAt,
-            owner = owner(),
+            owner = owner()
         )
         onLocalChange()
         scheduler.requestDrain()

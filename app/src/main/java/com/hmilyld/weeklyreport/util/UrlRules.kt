@@ -48,6 +48,5 @@ object UrlRules {
     }
 
     /** The stored server address without the /api/v1 suffix, for display. */
-    fun displayAddress(baseUrl: String?): String =
-        baseUrl.orEmpty().trimEnd('/').removeSuffix("/api/v1")
+    fun displayAddress(baseUrl: String?): String = baseUrl.orEmpty().trimEnd('/').removeSuffix("/api/v1")
 }

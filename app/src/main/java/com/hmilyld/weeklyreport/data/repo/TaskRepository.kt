@@ -12,17 +12,17 @@ import com.hmilyld.weeklyreport.data.sync.SyncTaskPayload
 import com.hmilyld.weeklyreport.network.ApiClient
 import com.hmilyld.weeklyreport.network.ApiPayloads
 import com.hmilyld.weeklyreport.util.Dates
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.util.UUID
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class TaskRepository(
     private val db: AppDatabase,
     private val api: ApiClient,
     private val session: SessionManager,
     private val scheduler: SyncScheduler,
-    private val onLocalChange: () -> Unit,
+    private val onLocalChange: () -> Unit
 ) {
     fun localTasks(): List<LocalTask> = db.allLocalTasks().filter { !it.deleted }
 
@@ -48,8 +48,8 @@ class TaskRepository(
                 content = content,
                 deadline = deadline,
                 includeDeadline = true,
-                isCompleted = false,
-            ),
+                isCompleted = false
+            )
         )
         onLocalChange()
         scheduler.requestDrain()
@@ -67,30 +67,29 @@ class TaskRepository(
                 content = task.content,
                 deadline = task.deadline,
                 includeDeadline = previousIncludeDeadline(localId),
-                isCompleted = completed,
-            ),
+                isCompleted = completed
+            )
         )
         onLocalChange()
         scheduler.requestDrain()
     }
 
-    suspend fun edit(localId: String, content: String, deadline: String?, deadlineChanged: Boolean) =
-        withContext(Dispatchers.IO) {
-            val task = db.localTask(localId) ?: return@withContext
-            db.updateLocalTask(localId, content, deadline, task.isCompleted)
-            enqueue(
-                localId = localId,
-                kind = if (task.remoteId == null) OutboxKind.TASK_CREATE else OutboxKind.TASK_UPDATE,
-                payload = SyncTaskPayload(
-                    content = content,
-                    deadline = deadline,
-                    includeDeadline = deadlineChanged || previousIncludeDeadline(localId),
-                    isCompleted = task.isCompleted,
-                ),
+    suspend fun edit(localId: String, content: String, deadline: String?, deadlineChanged: Boolean) = withContext(Dispatchers.IO) {
+        val task = db.localTask(localId) ?: return@withContext
+        db.updateLocalTask(localId, content, deadline, task.isCompleted)
+        enqueue(
+            localId = localId,
+            kind = if (task.remoteId == null) OutboxKind.TASK_CREATE else OutboxKind.TASK_UPDATE,
+            payload = SyncTaskPayload(
+                content = content,
+                deadline = deadline,
+                includeDeadline = deadlineChanged || previousIncludeDeadline(localId),
+                isCompleted = task.isCompleted
             )
-            onLocalChange()
-            scheduler.requestDrain()
-        }
+        )
+        onLocalChange()
+        scheduler.requestDrain()
+    }
 
     suspend fun delete(localId: String) = withContext(Dispatchers.IO) {
         val task = db.localTask(localId) ?: return@withContext
@@ -102,7 +101,7 @@ class TaskRepository(
             enqueue(
                 localId = localId,
                 kind = OutboxKind.TASK_DELETE,
-                payload = SyncTaskPayload(content = task.content),
+                payload = SyncTaskPayload(content = task.content)
             )
             onLocalChange()
             scheduler.requestDrain()
@@ -116,17 +115,16 @@ class TaskRepository(
             kind = kind,
             localId = localId,
             payload = ApiPayloads.json.encodeToString(SyncTaskPayload.serializer(), payload),
-            owner = session.owner(),
+            owner = session.owner()
         )
     }
 
     /** Keep a deadline edit alive across a later toggle in the same offline batch. */
-    private fun previousIncludeDeadline(localId: String): Boolean =
-        db.outboxForEntity(localId).any { item ->
-            runCatching {
-                ApiPayloads.json.decodeFromString(SyncTaskPayload.serializer(), item.payload).includeDeadline
-            }.getOrDefault(false)
-        }
+    private fun previousIncludeDeadline(localId: String): Boolean = db.outboxForEntity(localId).any { item ->
+        runCatching {
+            ApiPayloads.json.decodeFromString(SyncTaskPayload.serializer(), item.payload).includeDeadline
+        }.getOrDefault(false)
+    }
 
     private fun TaskDto.toServerTask() = ServerTask(
         remoteId = id,
@@ -134,6 +132,6 @@ class TaskRepository(
         deadline = deadline,
         isCompleted = isCompleted,
         updatedAt = updatedAt,
-        createdAt = Dates.parseServerInstant(createdAt)?.toEpochMilli() ?: Instant.now().toEpochMilli(),
+        createdAt = Dates.parseServerInstant(createdAt)?.toEpochMilli() ?: Instant.now().toEpochMilli()
     )
 }

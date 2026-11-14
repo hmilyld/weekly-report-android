@@ -77,7 +77,7 @@ fun SettingsScreen(
     biometricEnabled: Boolean,
     onThemeChange: (ThemeMode) -> Unit,
     onBiometricChange: (Boolean) -> Unit,
-    onNotify: (String) -> Unit,
+    onNotify: (String) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -100,12 +100,12 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = Spacing.lg),
+            .padding(horizontal = Spacing.lg)
     ) {
         ScreenHeader(
             kicker = stringResource(R.string.settings_kicker),
             title = stringResource(R.string.settings_title),
-            subtitle = stringResource(R.string.settings_subtitle),
+            subtitle = stringResource(R.string.settings_subtitle)
         )
 
         SettingsSection(stringResource(R.string.settings_section_server)) {
@@ -116,10 +116,10 @@ fun SettingsScreen(
                         stringResource(R.string.settings_server_unset)
                     } else {
                         state.serverInput
-                    },
+                    }
                 ),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             OutlinedTextField(
                 value = state.serverInput,
@@ -138,21 +138,21 @@ fun SettingsScreen(
                                 stringResource(R.string.settings_server_hint_debug)
                             } else {
                                 stringResource(R.string.settings_server_hint_release)
-                            },
+                            }
                     )
                 },
-                shape = MaterialTheme.shapes.small,
+                shape = MaterialTheme.shapes.small
             )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.sm),
                 horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
                     onClick = { viewModel.testServer(state.serverInput) },
-                    enabled = !state.testing,
+                    enabled = !state.testing
                 ) {
                     if (state.testing) {
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
@@ -162,7 +162,7 @@ fun SettingsScreen(
                 }
                 Button(
                     onClick = { viewModel.saveServer(state.serverInput) },
-                    modifier = Modifier.padding(start = Spacing.sm),
+                    modifier = Modifier.padding(start = Spacing.sm)
                 ) { Text(stringResource(R.string.settings_save_and_relogin)) }
             }
         }
@@ -173,28 +173,28 @@ fun SettingsScreen(
                     modifier = Modifier
                         .size(44.dp)
                         .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = state.user?.username?.take(1)?.uppercase() ?: "?",
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(start = Spacing.md),
+                        .padding(start = Spacing.md)
                 ) {
                     Text(
                         text = state.user?.username ?: stringResource(R.string.settings_reading),
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = stringResource(R.string.settings_current_user),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         if (state.user?.role != null) {
                             Pill(
@@ -204,7 +204,7 @@ fun SettingsScreen(
                                     stringResource(R.string.settings_role_user)
                                 },
                                 color = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.padding(start = Spacing.xs),
+                                modifier = Modifier.padding(start = Spacing.xs)
                             )
                         }
                     }
@@ -215,7 +215,7 @@ fun SettingsScreen(
                     } else {
                         Icon(
                             Icons.Outlined.Refresh,
-                            contentDescription = stringResource(R.string.settings_refresh_account),
+                            contentDescription = stringResource(R.string.settings_refresh_account)
                         )
                     }
                 }
@@ -225,32 +225,32 @@ fun SettingsScreen(
                     text = state.notice.orEmpty(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(top = Spacing.xs),
+                    modifier = Modifier.padding(top = Spacing.xs)
                 )
             }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.md),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
                 OutlinedButton(onClick = { showPasswordDialog = true }) {
                     Icon(Icons.Outlined.Key, contentDescription = null, modifier = Modifier.size(16.dp))
                     Text(
                         stringResource(R.string.settings_change_password),
-                        modifier = Modifier.padding(start = Spacing.xs),
+                        modifier = Modifier.padding(start = Spacing.xs)
                     )
                 }
                 OutlinedButton(
                     onClick = { showLogoutConfirm = true },
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
-                    ),
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
                 ) {
                     Icon(Icons.AutoMirrored.Outlined.Logout, contentDescription = null, modifier = Modifier.size(16.dp))
                     Text(
                         stringResource(R.string.settings_logout),
-                        modifier = Modifier.padding(start = Spacing.xs),
+                        modifier = Modifier.padding(start = Spacing.xs)
                     )
                 }
             }
@@ -259,13 +259,13 @@ fun SettingsScreen(
         SettingsSection(stringResource(R.string.settings_section_appearance)) {
             Text(
                 text = stringResource(R.string.settings_theme),
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleSmall
             )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.sm),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
                 ThemeMode.entries.forEach { mode ->
                     FilterChip(
@@ -277,9 +277,9 @@ fun SettingsScreen(
                                     ThemeMode.SYSTEM -> stringResource(R.string.settings_theme_system)
                                     ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
                                     ThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
-                                },
+                                }
                             )
-                        },
+                        }
                     )
                 }
             }
@@ -290,21 +290,21 @@ fun SettingsScreen(
                 Icon(
                     Icons.Outlined.Fingerprint,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.primary
                 )
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(start = Spacing.md),
+                        .padding(start = Spacing.md)
                 ) {
                     Text(
                         stringResource(R.string.settings_biometric_title),
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.titleSmall
                     )
                     Text(
                         stringResource(R.string.settings_biometric_desc),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Switch(
@@ -320,10 +320,10 @@ fun SettingsScreen(
                                 title = context.getString(R.string.settings_biometric_prompt_title),
                                 subtitle = context.getString(R.string.settings_biometric_prompt_subtitle),
                                 onSuccess = { onBiometricChange(true) },
-                                onFailure = onNotify,
+                                onFailure = onNotify
                             )
                         }
-                    },
+                    }
                 )
             }
         }
@@ -333,27 +333,27 @@ fun SettingsScreen(
                 Icon(
                     Icons.Outlined.NotificationsActive,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.primary
                 )
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(start = Spacing.md),
+                        .padding(start = Spacing.md)
                 ) {
                     Text(
                         stringResource(R.string.tasks_notification_name),
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.titleSmall
                     )
                     Text(
                         stringResource(R.string.settings_notifications_desc),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 if (notificationsGranted) {
                     Pill(
                         text = stringResource(R.string.settings_notifications_granted),
-                        color = MaterialTheme.colorScheme.secondary,
+                        color = MaterialTheme.colorScheme.secondary
                     )
                 }
             }
@@ -363,7 +363,7 @@ fun SettingsScreen(
                     .padding(top = Spacing.sm),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-                maxItemsInEachRow = 2,
+                maxItemsInEachRow = 2
             ) {
                 if (!notificationsGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     OutlinedButton(onClick = {
@@ -374,7 +374,7 @@ fun SettingsScreen(
                         Text(
                             stringResource(R.string.settings_notifications_enable),
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -382,13 +382,13 @@ fun SettingsScreen(
                     Icon(
                         Icons.Outlined.NotificationsActive,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(16.dp)
                     )
                     Text(
                         stringResource(R.string.settings_check_reminders),
                         modifier = Modifier.padding(start = Spacing.xs),
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 OutlinedButton(onClick = viewModel::pinWidget) {
@@ -397,7 +397,7 @@ fun SettingsScreen(
                         stringResource(R.string.settings_add_widget),
                         modifier = Modifier.padding(start = Spacing.xs),
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -406,7 +406,7 @@ fun SettingsScreen(
                     text = stringResource(R.string.settings_notifications_hint),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = Spacing.xs),
+                    modifier = Modifier.padding(top = Spacing.xs)
                 )
             }
         }
@@ -416,16 +416,16 @@ fun SettingsScreen(
                 Icon(
                     Icons.Outlined.CloudOff,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.secondary,
+                    tint = MaterialTheme.colorScheme.secondary
                 )
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(start = Spacing.md),
+                        .padding(start = Spacing.md)
                 ) {
                     Text(
                         stringResource(R.string.settings_queue_title),
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.titleSmall
                     )
                     Text(
                         if (state.queue.failed > 0) {
@@ -433,27 +433,27 @@ fun SettingsScreen(
                                 R.string.settings_queue_summary_failed,
                                 state.queue.pending,
                                 state.queue.conflicts,
-                                state.queue.failed,
+                                state.queue.failed
                             )
                         } else {
                             stringResource(
                                 R.string.settings_queue_summary,
                                 state.queue.pending,
-                                state.queue.conflicts,
+                                state.queue.conflicts
                             )
                         },
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 OutlinedButton(
                     onClick = viewModel::retryQueue,
-                    enabled = state.queue.pending > 0 || state.queue.failed > 0,
+                    enabled = state.queue.pending > 0 || state.queue.failed > 0
                 ) {
                     Icon(Icons.Outlined.Sync, contentDescription = null, modifier = Modifier.size(16.dp))
                     Text(
                         stringResource(R.string.settings_retry_now),
-                        modifier = Modifier.padding(start = Spacing.xs),
+                        modifier = Modifier.padding(start = Spacing.xs)
                     )
                 }
             }
@@ -462,7 +462,7 @@ fun SettingsScreen(
                     text = stringResource(R.string.settings_queue_conflict_hint),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = Spacing.xs),
+                    modifier = Modifier.padding(top = Spacing.xs)
                 )
             }
             if (state.queue.failed > 0) {
@@ -470,7 +470,7 @@ fun SettingsScreen(
                     text = stringResource(R.string.settings_queue_failed_hint),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = Spacing.xs),
+                    modifier = Modifier.padding(top = Spacing.xs)
                 )
             }
         }
@@ -479,25 +479,25 @@ fun SettingsScreen(
             Column(modifier = Modifier.padding(Spacing.lg)) {
                 Text(
                     stringResource(R.string.settings_about),
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleSmall
                 )
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = Spacing.sm),
-                    color = MaterialTheme.colorScheme.outlineVariant,
+                    color = MaterialTheme.colorScheme.outlineVariant
                 )
                 Text(
                     text = stringResource(
                         R.string.settings_version,
                         BuildConfig.VERSION_NAME,
-                        BuildConfig.VERSION_CODE,
+                        BuildConfig.VERSION_CODE
                     ),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
                     text = stringResource(R.string.settings_about_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = Spacing.xs),
+                    modifier = Modifier.padding(top = Spacing.xs)
                 )
             }
         }
@@ -510,7 +510,7 @@ fun SettingsScreen(
             onDismiss = {
                 viewModel.clearPasswordError()
                 showPasswordDialog = false
-            },
+            }
         )
     }
 
@@ -524,7 +524,7 @@ fun SettingsScreen(
                 showLogoutConfirm = false
                 viewModel.logout()
             },
-            onDismiss = { showLogoutConfirm = false },
+            onDismiss = { showLogoutConfirm = false }
         )
     }
 }
@@ -536,7 +536,7 @@ private fun SettingsSection(title: String, content: @Composable () -> Unit) {
             text = title,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = Spacing.xs, bottom = Spacing.xs),
+            modifier = Modifier.padding(start = Spacing.xs, bottom = Spacing.xs)
         )
         PaperCard {
             Column(modifier = Modifier.padding(Spacing.lg)) { content() }
@@ -547,7 +547,7 @@ private fun SettingsSection(title: String, content: @Composable () -> Unit) {
 @Composable
 private fun PasswordDialog(
     viewModel: SettingsViewModel,
-    onDismiss: () -> Unit,
+    onDismiss: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     var oldPassword by remember { mutableStateOf("") }
@@ -569,7 +569,7 @@ private fun PasswordDialog(
                 Text(
                     text = stringResource(R.string.settings_password_intro),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 OutlinedTextField(
                     value = oldPassword,
@@ -582,7 +582,7 @@ private fun PasswordDialog(
                         .padding(top = Spacing.sm),
                     label = { Text(stringResource(R.string.settings_password_current)) },
                     singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = PasswordVisualTransformation()
                 )
                 OutlinedTextField(
                     value = newPassword,
@@ -595,7 +595,7 @@ private fun PasswordDialog(
                         .padding(top = Spacing.sm),
                     label = { Text(stringResource(R.string.settings_password_new)) },
                     singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = PasswordVisualTransformation()
                 )
                 OutlinedTextField(
                     value = confirmPassword,
@@ -608,14 +608,14 @@ private fun PasswordDialog(
                         .padding(top = Spacing.sm),
                     label = { Text(stringResource(R.string.settings_password_confirm)) },
                     singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = PasswordVisualTransformation()
                 )
                 if (state.passwordError != null) {
                     Text(
                         text = state.passwordError.orEmpty(),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(top = Spacing.sm),
+                        modifier = Modifier.padding(top = Spacing.sm)
                     )
                 }
             }
@@ -623,7 +623,7 @@ private fun PasswordDialog(
         confirmButton = {
             TextButton(
                 onClick = { viewModel.changePassword(oldPassword, newPassword, confirmPassword) },
-                enabled = !state.changingPassword,
+                enabled = !state.changingPassword
             ) {
                 if (state.changingPassword) {
                     CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
@@ -636,6 +636,6 @@ private fun PasswordDialog(
             TextButton(onClick = onDismiss, enabled = !state.changingPassword) {
                 Text(stringResource(R.string.common_cancel))
             }
-        },
+        }
     )
 }

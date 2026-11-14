@@ -22,7 +22,7 @@ sealed interface SessionState {
 class SessionManager(
     private val settings: SettingsStore,
     private val tokenStore: SecureTokenStore,
-    private val api: ApiClient,
+    private val api: ApiClient
 ) {
     private var tokenCache: String? = tokenStore.readToken()
     private var cachedUsername: String = settings.lastUsername.value
@@ -32,7 +32,7 @@ class SessionManager(
             tokenCache == null -> SessionState.LoggedOut
             settings.biometricEnabled.value -> SessionState.Locked(cachedUsername)
             else -> SessionState.LoggedIn(cachedUsername)
-        },
+        }
     )
     val state: StateFlow<SessionState> = _state.asStateFlow()
 

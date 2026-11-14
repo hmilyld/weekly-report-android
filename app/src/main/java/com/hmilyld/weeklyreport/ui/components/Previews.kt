@@ -32,7 +32,7 @@ private fun ComponentsLightPreview() {
     name = "Dark",
     showBackground = true,
     widthDp = 380,
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Composable
 private fun ComponentsDarkPreview() {
@@ -43,7 +43,7 @@ private fun ComponentsDarkPreview() {
     name = "Large font",
     showBackground = true,
     widthDp = 380,
-    fontScale = 1.5f,
+    fontScale = 1.5f
 )
 @Composable
 private fun ComponentsLargeFontPreview() {
@@ -61,29 +61,29 @@ private fun ComponentCatalog() {
                     subtitle = stringResource(R.string.daily_subtitle),
                     trailing = {
                         Button(onClick = {}) { Text(stringResource(R.string.previews_refresh)) }
-                    },
+                    }
                 )
                 PaperCard(modifier = Modifier.padding(top = Spacing.md)) {
                     Column(modifier = Modifier.padding(Spacing.lg)) {
                         Text(
                             stringResource(R.string.previews_today_progress),
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleMedium
                         )
                         Pill(
                             text = stringResource(R.string.daily_pill_pending_sync),
                             color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.padding(top = Spacing.xs),
+                            modifier = Modifier.padding(top = Spacing.xs)
                         )
                     }
                 }
                 Banner(
                     text = stringResource(R.string.app_banner_conflict_count, 2),
-                    modifier = Modifier.padding(top = Spacing.md),
+                    modifier = Modifier.padding(top = Spacing.md)
                 )
                 EmptyState(
                     title = stringResource(R.string.reports_empty_weekly_title),
                     description = stringResource(R.string.reports_empty_weekly_desc),
-                    icon = Icons.Outlined.Checklist,
+                    icon = Icons.Outlined.Checklist
                 )
             }
         }

@@ -6,6 +6,7 @@ import com.hmilyld.weeklyreport.data.repo.ReportRepository
 import com.hmilyld.weeklyreport.network.ApiErrorKind
 import com.hmilyld.weeklyreport.network.ApiException
 import com.hmilyld.weeklyreport.util.Dates
+import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,7 +14,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 enum class ReportCadence { WEEKLY, MONTHLY }
 
@@ -32,7 +32,7 @@ data class ReportUiState(
     val offline: Boolean = false,
     val error: String? = null,
     val editing: Boolean = false,
-    val draft: String = "",
+    val draft: String = ""
 ) {
     val dirty: Boolean get() = editing && draft != content
     val periodKey: String
@@ -144,7 +144,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
                                 offline = true,
                                 notGenerated = false,
                                 loading = false,
-                                editing = false,
+                                editing = false
                             )
                         }
                     } else {
@@ -153,7 +153,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
                                 offline = true,
                                 error = error.message,
                                 loading = false,
-                                notGenerated = true,
+                                notGenerated = true
                             )
                         }
                     }
@@ -263,7 +263,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
                     generatedAt = null,
                     notGenerated = true,
                     loading = false,
-                    editing = false,
+                    editing = false
                 )
             }
         } else {
@@ -274,7 +274,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
                     generatedAt = generatedAt,
                     notGenerated = false,
                     loading = false,
-                    editing = false,
+                    editing = false
                 )
             }
         }

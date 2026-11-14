@@ -23,7 +23,7 @@ object NotificationPermission {
             },
             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = "package:${context.packageName}".toUri()
-            },
+            }
         )
         for (intent in intents) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

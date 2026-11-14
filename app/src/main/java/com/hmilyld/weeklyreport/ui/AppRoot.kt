@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -19,7 +18,6 @@ import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Checklist
-import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Sync
@@ -46,13 +44,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hmilyld.weeklyreport.AppContainer
@@ -73,23 +69,23 @@ import com.hmilyld.weeklyreport.ui.screens.tasks.TasksScreen
 import com.hmilyld.weeklyreport.ui.screens.tasks.TasksViewModel
 import com.hmilyld.weeklyreport.ui.theme.Spacing
 import com.hmilyld.weeklyreport.util.ListInput
+import java.time.LocalDate
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 data class WidgetOpen(
     val date: LocalDate?,
     val openEditor: Boolean,
     val tab: String?,
-    val id: Long,
+    val id: Long
 )
 
 private enum class AppTab(@StringRes val labelRes: Int) {
     DAILY(R.string.app_tab_daily),
     TASKS(R.string.app_tab_tasks),
     REPORTS(R.string.app_tab_reports),
-    SETTINGS(R.string.app_tab_settings),
+    SETTINGS(R.string.app_tab_settings)
 }
 
 // Material 3 navigation bars show the filled icon for the current tab and the
@@ -114,7 +110,7 @@ private fun AppTab.icon(selected: Boolean): ImageVector = if (selected) {
 fun AppRoot(
     container: AppContainer,
     widgetRequest: StateFlow<WidgetOpen?>,
-    onWidgetRequestConsumed: () -> Unit,
+    onWidgetRequestConsumed: () -> Unit
 ) {
     val appViewModel: AppViewModel = viewModel(factory = SimpleVmFactory { AppViewModel(container) })
     val session by appViewModel.session.collectAsState()
@@ -124,12 +120,12 @@ fun AppRoot(
     when (val current = session) {
         is SessionState.LoggedOut -> {
             val loginViewModel: LoginViewModel = viewModel(
-                factory = SimpleVmFactory { LoginViewModel(container.settings, container.session, container.api) },
+                factory = SimpleVmFactory { LoginViewModel(container.settings, container.session, container.api) }
             )
             LoginScreen(
                 viewModel = loginViewModel,
                 problem = problem,
-                onNotify = {},
+                onNotify = {}
             )
         }
 
@@ -146,11 +142,11 @@ fun AppRoot(
                         title = unlockTitle,
                         subtitle = current.username,
                         onSuccess = { container.session.unlock() },
-                        onFailure = { },
+                        onFailure = { }
                     )
                 },
                 onLoginWithPassword = { appViewModel.logout() },
-                onNotify = {},
+                onNotify = {}
             )
         }
 
@@ -160,7 +156,7 @@ fun AppRoot(
                 theme = theme,
                 appViewModel = appViewModel,
                 widgetRequest = widgetRequest,
-                onWidgetRequestConsumed = onWidgetRequestConsumed,
+                onWidgetRequestConsumed = onWidgetRequestConsumed
             )
         }
     }
@@ -172,19 +168,19 @@ private fun LoggedInRoot(
     theme: com.hmilyld.weeklyreport.data.prefs.ThemeMode,
     appViewModel: AppViewModel,
     widgetRequest: StateFlow<WidgetOpen?>,
-    onWidgetRequestConsumed: () -> Unit,
+    onWidgetRequestConsumed: () -> Unit
 ) {
     val dailyViewModel: DailyViewModel = viewModel(
-        factory = SimpleVmFactory { DailyViewModel(container.dailyRepository, container.dataVersion) },
+        factory = SimpleVmFactory { DailyViewModel(container.dailyRepository, container.dataVersion) }
     )
     val tasksViewModel: TasksViewModel = viewModel(
-        factory = SimpleVmFactory { TasksViewModel(container.taskRepository, container.dataVersion) },
+        factory = SimpleVmFactory { TasksViewModel(container.taskRepository, container.dataVersion) }
     )
     val reportsViewModel: ReportsViewModel = viewModel(
-        factory = SimpleVmFactory { ReportsViewModel(container.reportRepository) },
+        factory = SimpleVmFactory { ReportsViewModel(container.reportRepository) }
     )
     val settingsViewModel: SettingsViewModel = viewModel(
-        factory = SimpleVmFactory { SettingsViewModel(container) },
+        factory = SimpleVmFactory { SettingsViewModel(container) }
     )
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -233,7 +229,7 @@ private fun LoggedInRoot(
             tasksViewModel.messages,
             reportsViewModel.messages,
             settingsViewModel.messages,
-            appViewModel.messages,
+            appViewModel.messages
         ).collect { message ->
             snackbarHostState.showSnackbar(message, withDismissAction = true)
         }
@@ -267,24 +263,24 @@ private fun LoggedInRoot(
                                 imageVector = entry.icon(tab == entry),
                                 // The label below already names the tab; a
                                 // description here would be read twice.
-                                contentDescription = null,
+                                contentDescription = null
                             )
                         },
                         label = { Text(stringResource(entry.labelRes)) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = MaterialTheme.colorScheme.primary,
                             selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                        ),
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                        )
                     )
                 }
             }
-        },
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(innerPadding)
         ) {
             when {
                 counts.conflicts > 0 -> Banner(
@@ -294,7 +290,7 @@ private fun LoggedInRoot(
                             Text(stringResource(R.string.app_banner_action))
                         }
                     },
-                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
                 )
 
                 counts.failed > 0 -> Banner(
@@ -306,7 +302,7 @@ private fun LoggedInRoot(
                             Text(stringResource(R.string.app_banner_action))
                         }
                     },
-                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
                 )
 
                 counts.pending > 0 -> Banner(
@@ -318,7 +314,7 @@ private fun LoggedInRoot(
                             Text(stringResource(R.string.common_retry))
                         }
                     },
-                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
                 )
             }
 
@@ -336,7 +332,7 @@ private fun LoggedInRoot(
                             biometricEnabled = biometricEnabled,
                             onThemeChange = appViewModel::setTheme,
                             onBiometricChange = settingsViewModel::setBiometricEnabled,
-                            onNotify = notify,
+                            onNotify = notify
                         )
                     }
                 }
@@ -354,7 +350,7 @@ private fun LoggedInRoot(
             onOverwrite = {
                 appViewModel.resolveOverwrite(conflicts.first().id)
             },
-            onDismiss = { showConflicts = false },
+            onDismiss = { showConflicts = false }
         )
     }
 }
@@ -365,7 +361,7 @@ private fun ConflictDialog(
     total: Int,
     onKeepServer: () -> Unit,
     onOverwrite: () -> Unit,
-    onDismiss: () -> Unit,
+    onDismiss: () -> Unit
 ) {
     val localText = if (conflict.kind.name == "DAILY_DELETE") {
         stringResource(R.string.app_conflict_local_delete)
@@ -373,7 +369,7 @@ private fun ConflictDialog(
         stringResource(
             R.string.app_conflict_local_text,
             ListInput.bodyWithoutMarkers(conflict.payload).trim()
-                .ifEmpty { stringResource(R.string.app_conflict_blank) },
+                .ifEmpty { stringResource(R.string.app_conflict_blank) }
         )
     }
     AlertDialog(
@@ -381,7 +377,7 @@ private fun ConflictDialog(
         title = {
             Text(
                 text = stringResource(R.string.app_conflict_title, conflict.entityKey),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleLarge
             )
         },
         text = {
@@ -389,22 +385,22 @@ private fun ConflictDialog(
                 Text(
                     text = stringResource(R.string.app_conflict_body, total),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = Spacing.sm),
-                    color = MaterialTheme.colorScheme.outlineVariant,
+                    color = MaterialTheme.colorScheme.outlineVariant
                 )
                 Text(localText, style = MaterialTheme.typography.bodyMedium)
                 Text(
                     text = stringResource(
                         R.string.app_conflict_server_text,
                         conflict.serverContent?.takeIf { it.isNotBlank() }
-                            ?: stringResource(R.string.app_conflict_blank),
+                            ?: stringResource(R.string.app_conflict_blank)
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(top = Spacing.sm),
+                    modifier = Modifier.padding(top = Spacing.sm)
                 )
             }
         },
@@ -413,7 +409,7 @@ private fun ConflictDialog(
                 Text(
                     stringResource(R.string.app_conflict_overwrite),
                     color = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         },
@@ -424,6 +420,6 @@ private fun ConflictDialog(
                 }
                 TextButton(onClick = onDismiss) { Text(stringResource(R.string.app_conflict_later)) }
             }
-        },
+        }
     )
 }

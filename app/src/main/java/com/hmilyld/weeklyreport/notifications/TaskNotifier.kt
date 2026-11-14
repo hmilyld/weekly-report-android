@@ -30,24 +30,23 @@ object TaskNotifier {
         val channel = NotificationChannel(
             CHANNEL_ID,
             context.getString(R.string.tasks_notification_name),
-            NotificationManager.IMPORTANCE_DEFAULT,
+            NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
             description = context.getString(R.string.tasks_notification_channel_desc)
         }
         manager.createNotificationChannel(channel)
     }
 
-    fun hasPermission(context: Context): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
+    fun hasPermission(context: Context): Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+        PackageManager.PERMISSION_GRANTED
 
     /** Returns how many tasks were mentioned; 0 means nothing was due. */
     fun checkAndNotify(
         context: Context,
         db: AppDatabase,
         settings: SettingsStore,
-        force: Boolean,
+        force: Boolean
     ): Int {
         ensureChannel(context)
         if (!hasPermission(context)) return 0
@@ -91,7 +90,7 @@ object TaskNotifier {
                 prefix,
                 content,
                 deadline.monthValue,
-                deadline.dayOfMonth,
+                deadline.dayOfMonth
             )
         }
 
@@ -103,7 +102,7 @@ object TaskNotifier {
             context,
             4201,
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)

@@ -34,12 +34,12 @@ data class SettingsUiState(
     val passwordError: String? = null,
     val passwordSuccess: Boolean = false,
     val queue: OutboxCounts = OutboxCounts(0, 0),
-    val notice: String? = null,
+    val notice: String? = null
 )
 
 class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     private val _state = MutableStateFlow(
-        SettingsUiState(serverInput = UrlRules.displayAddress(container.settings.serverBaseValue())),
+        SettingsUiState(serverInput = UrlRules.displayAddress(container.settings.serverBaseValue()))
     )
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
 
@@ -66,7 +66,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                 _state.update {
                     it.copy(
                         loadingUser = false,
-                        notice = if (error.kind == ApiErrorKind.NETWORK) "离线：暂时无法读取账号信息" else null,
+                        notice = if (error.kind == ApiErrorKind.NETWORK) "离线：暂时无法读取账号信息" else null
                     )
                 }
             }
@@ -197,7 +197,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                     container.appContext,
                     container.db,
                     container.settings,
-                    force = true,
+                    force = true
                 )
             }
             val message = when {
@@ -213,7 +213,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
         val requested = TodayWidgetProvider.requestPin(container.appContext)
         viewModelScope.launch {
             _messages.emit(
-                if (requested) "已请求添加主屏小部件" else "当前桌面不支持直接添加，请长按桌面手动添加",
+                if (requested) "已请求添加主屏小部件" else "当前桌面不支持直接添加，请长按桌面手动添加"
             )
         }
     }

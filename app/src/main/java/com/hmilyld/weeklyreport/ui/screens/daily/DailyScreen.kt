@@ -23,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -79,7 +78,7 @@ fun DailyScreen(viewModel: DailyViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = Spacing.lg),
+            .padding(horizontal = Spacing.lg)
     ) {
         ScreenHeader(
             kicker = stringResource(R.string.daily_kicker),
@@ -89,10 +88,10 @@ fun DailyScreen(viewModel: DailyViewModel) {
                 IconButton(onClick = { viewModel.load() }) {
                     Icon(
                         Icons.Outlined.Refresh,
-                        contentDescription = stringResource(R.string.daily_refresh_week),
+                        contentDescription = stringResource(R.string.daily_refresh_week)
                     )
                 }
-            },
+            }
         )
 
         PeriodNavigator(
@@ -102,7 +101,7 @@ fun DailyScreen(viewModel: DailyViewModel) {
             onNext = viewModel::nextWeek,
             onToday = if (state.isCurrentWeek) null else viewModel::thisWeek,
             todayLabel = stringResource(R.string.common_this_week),
-            modifier = Modifier.padding(top = Spacing.md),
+            modifier = Modifier.padding(top = Spacing.md)
         )
 
         if (state.offline) {
@@ -110,7 +109,7 @@ fun DailyScreen(viewModel: DailyViewModel) {
                 Banner(
                     text = stringResource(R.string.daily_offline_banner),
                     tone = MaterialTheme.colorScheme.secondary,
-                    icon = Icons.Outlined.CloudOff,
+                    icon = Icons.Outlined.CloudOff
                 )
             }
         }
@@ -122,7 +121,7 @@ fun DailyScreen(viewModel: DailyViewModel) {
                         TextButton(onClick = { viewModel.load() }) {
                             Text(stringResource(R.string.common_retry))
                         }
-                    },
+                    }
                 )
             }
         }
@@ -145,7 +144,7 @@ fun DailyScreen(viewModel: DailyViewModel) {
                     text = stringResource(R.string.daily_empty_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = Spacing.md, start = Spacing.xs),
+                    modifier = Modifier.padding(top = Spacing.md, start = Spacing.xs)
                 )
             }
         }
@@ -158,7 +157,7 @@ fun DailyScreen(viewModel: DailyViewModel) {
             saving = saving,
             onDismiss = viewModel::closeEditor,
             onSave = viewModel::save,
-            onDelete = viewModel::delete,
+            onDelete = viewModel::delete
         )
     }
 }
@@ -176,24 +175,24 @@ private fun DayRow(day: DailyDayUi, onClick: () -> Unit) {
             .background(rowColor)
             .clickable(onClick = onClick)
             .padding(horizontal = Spacing.lg, vertical = Spacing.md),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.width(58.dp)) {
             Text(
                 text = Dates.monthDay(day.date),
                 style = MaterialTheme.typography.titleMedium,
-                color = if (day.isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                color = if (day.isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = Dates.weekdayShort(day.date),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (day.isToday) {
                 Pill(
                     text = stringResource(R.string.daily_pill_today),
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = Spacing.xs),
+                    modifier = Modifier.padding(top = Spacing.xs)
                 )
             }
         }
@@ -212,7 +211,7 @@ private fun DayRow(day: DailyDayUi, onClick: () -> Unit) {
                     MaterialTheme.colorScheme.onSurface
                 },
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+                overflow = TextOverflow.Ellipsis
             )
             if (day.pending) {
                 Pill(
@@ -222,14 +221,14 @@ private fun DayRow(day: DailyDayUi, onClick: () -> Unit) {
                         stringResource(R.string.daily_pill_pending_sync)
                     },
                     color = if (day.deleted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(top = Spacing.xs),
+                    modifier = Modifier.padding(top = Spacing.xs)
                 )
             }
         }
         Icon(
             imageVector = Icons.Outlined.ChevronRight,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.outline,
+            tint = MaterialTheme.colorScheme.outline
         )
     }
 }
@@ -241,7 +240,7 @@ private fun DailyEditorSheet(
     saving: Boolean,
     onDismiss: () -> Unit,
     onSave: (String) -> Unit,
-    onDelete: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val keyboard = LocalSoftwareKeyboardController.current
@@ -250,8 +249,8 @@ private fun DailyEditorSheet(
         mutableStateOf(
             TextFieldValue(
                 text = editor.initialContent,
-                selection = TextRange(editor.initialContent.length),
-            ),
+                selection = TextRange(editor.initialContent.length)
+            )
         )
     }
     var showDiscard by rememberSaveable { mutableStateOf(false) }
@@ -275,7 +274,7 @@ private fun DailyEditorSheet(
                 oldText = old.text,
                 oldCursor = old.selection.start,
                 newText = newValue.text,
-                composing = false,
+                composing = false
             )
             if (edit != null) {
                 value = TextFieldValue(edit.value, TextRange(edit.caret))
@@ -286,9 +285,11 @@ private fun DailyEditorSheet(
     }
 
     val requestClose = {
-        if (saving) Unit
-        else if (dirty) showDiscard = true
-        else {
+        if (saving) {
+            Unit
+        } else if (dirty) {
+            showDiscard = true
+        } else {
             keyboard?.hide()
             onDismiss()
         }
@@ -304,7 +305,7 @@ private fun DailyEditorSheet(
     ModalBottomSheet(
         onDismissRequest = requestClose,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
@@ -312,7 +313,7 @@ private fun DailyEditorSheet(
                 .imePadding()
                 .navigationBarsPadding()
                 .padding(horizontal = Spacing.xl)
-                .padding(bottom = Spacing.lg),
+                .padding(bottom = Spacing.lg)
         ) {
             Text(
                 text = if (editor.hasRecord) {
@@ -320,13 +321,13 @@ private fun DailyEditorSheet(
                 } else {
                     stringResource(R.string.daily_editor_title_new)
                 },
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineSmall
             )
             Text(
                 text = Dates.fullDateLabel(editor.date),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = Spacing.xs),
+                modifier = Modifier.padding(top = Spacing.xs)
             )
 
             OutlinedTextField(
@@ -340,17 +341,17 @@ private fun DailyEditorSheet(
                 placeholder = { Text(stringResource(R.string.daily_editor_placeholder)) },
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = FontFamily.SansSerif,
-                    lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
+                    lineHeight = MaterialTheme.typography.bodyLarge.lineHeight
                 ),
                 minLines = 9,
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(16.dp)
             )
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.sm),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = if (body.isEmpty()) {
@@ -360,21 +361,21 @@ private fun DailyEditorSheet(
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f)
                 )
                 if (editor.hasRecord) {
                     TextButton(
                         onClick = { showDeleteConfirm = true },
-                        enabled = !saving,
+                        enabled = !saving
                     ) {
                         Icon(
                             Icons.Outlined.DeleteOutline,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(18.dp)
                         )
                         Text(
                             stringResource(R.string.common_delete),
-                            color = MaterialTheme.colorScheme.error,
+                            color = MaterialTheme.colorScheme.error
                         )
                     }
                 }
@@ -385,7 +386,7 @@ private fun DailyEditorSheet(
                     .fillMaxWidth()
                     .padding(top = Spacing.md),
                 horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = requestClose, enabled = !saving) {
                     Text(stringResource(R.string.common_cancel))
@@ -396,13 +397,13 @@ private fun DailyEditorSheet(
                         onSave(ListInput.trimTrailingEmptyItem(value.text))
                     },
                     enabled = canSave,
-                    modifier = Modifier.padding(start = Spacing.sm),
+                    modifier = Modifier.padding(start = Spacing.sm)
                 ) {
                     if (saving) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
                             strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                         Spacer(modifier = Modifier.size(Spacing.sm))
                     }
@@ -411,7 +412,7 @@ private fun DailyEditorSheet(
                             stringResource(R.string.common_saving)
                         } else {
                             stringResource(R.string.common_save)
-                        },
+                        }
                     )
                 }
             }
@@ -430,7 +431,7 @@ private fun DailyEditorSheet(
                 keyboard?.hide()
                 onDismiss()
             },
-            onDismiss = { showDiscard = false },
+            onDismiss = { showDiscard = false }
         )
     }
 
@@ -445,7 +446,7 @@ private fun DailyEditorSheet(
                 keyboard?.hide()
                 onDelete()
             },
-            onDismiss = { showDeleteConfirm = false },
+            onDismiss = { showDeleteConfirm = false }
         )
     }
 }

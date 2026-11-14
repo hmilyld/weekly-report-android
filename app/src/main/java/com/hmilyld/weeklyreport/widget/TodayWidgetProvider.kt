@@ -40,7 +40,7 @@ class TodayWidgetProvider : AppWidgetProvider() {
             return manager.requestPinAppWidget(
                 ComponentName(context, TodayWidgetProvider::class.java),
                 null,
-                null,
+                null
             )
         }
 
@@ -53,8 +53,8 @@ class TodayWidgetProvider : AppWidgetProvider() {
                     R.string.widget_date_header,
                     today.monthValue,
                     today.dayOfMonth,
-                    Dates.weekdayShort(today),
-                ),
+                    Dates.weekdayShort(today)
+                )
             )
             val app = context.applicationContext as? WeeklyReportApp
             val cached = app?.container?.db?.dailyByDate(Dates.iso(today))
@@ -65,7 +65,7 @@ class TodayWidgetProvider : AppWidgetProvider() {
                 .orEmpty()
             views.setTextViewText(
                 R.id.widget_preview,
-                preview.ifEmpty { context.getString(R.string.widget_empty) },
+                preview.ifEmpty { context.getString(R.string.widget_empty) }
             )
 
             val intent = Intent(context, MainActivity::class.java).apply {
@@ -77,7 +77,7 @@ class TodayWidgetProvider : AppWidgetProvider() {
                 context,
                 today.toEpochDay().toInt(),
                 intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             views.setOnClickPendingIntent(R.id.widget_preview, pending)
             views.setOnClickPendingIntent(R.id.widget_action, pending)

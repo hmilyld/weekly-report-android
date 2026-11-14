@@ -11,15 +11,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.lifecycleScope
 import com.hmilyld.weeklyreport.data.prefs.ThemeMode
 import com.hmilyld.weeklyreport.ui.AppRoot
 import com.hmilyld.weeklyreport.ui.WidgetOpen
 import com.hmilyld.weeklyreport.ui.theme.WeeklyReportTheme
 import com.hmilyld.weeklyreport.util.Dates
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 class MainActivity : FragmentActivity() {
     private val widgetOpen = MutableStateFlow<WidgetOpen?>(null)
@@ -52,7 +49,7 @@ class MainActivity : FragmentActivity() {
                 AppRoot(
                     container = container,
                     widgetRequest = widgetOpen,
-                    onWidgetRequestConsumed = { widgetOpen.value = null },
+                    onWidgetRequestConsumed = { widgetOpen.value = null }
                 )
             }
         }
@@ -73,7 +70,7 @@ class MainActivity : FragmentActivity() {
             date = date,
             openEditor = intent.getBooleanExtra(EXTRA_OPEN_EDITOR, false),
             tab = tab,
-            id = System.nanoTime(),
+            id = System.nanoTime()
         )
     }
 

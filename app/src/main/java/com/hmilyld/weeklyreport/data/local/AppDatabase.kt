@@ -14,7 +14,7 @@ data class CachedDay(
     val serverContent: String?,
     val serverUpdatedAt: String?,
     val pending: Boolean,
-    val deleted: Boolean,
+    val deleted: Boolean
 )
 
 data class LocalTask(
@@ -25,7 +25,7 @@ data class LocalTask(
     val isCompleted: Boolean,
     val dirty: Boolean,
     val deleted: Boolean,
-    val createdAt: Long,
+    val createdAt: Long
 )
 
 data class OutboxItem(
@@ -41,14 +41,14 @@ data class OutboxItem(
     val lastError: String?,
     val serverContent: String?,
     val serverUpdatedAt: String?,
-    val createdAt: Long,
+    val createdAt: Long
 )
 
 data class ReportCacheEntry(
     val cacheKey: String,
     val content: String,
     val modelName: String,
-    val generatedAt: String?,
+    val generatedAt: String?
 )
 
 data class OutboxCounts(val pending: Int, val conflicts: Int, val failed: Int = 0)
@@ -71,7 +71,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                 pending INTEGER NOT NULL DEFAULT 0,
                 deleted INTEGER NOT NULL DEFAULT 0
             )
-            """.trimIndent(),
+            """.trimIndent()
         )
         db.execSQL(
             """
@@ -86,7 +86,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                 deleted INTEGER NOT NULL DEFAULT 0,
                 created_at INTEGER NOT NULL
             )
-            """.trimIndent(),
+            """.trimIndent()
         )
         db.execSQL(
             """
@@ -105,7 +105,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                 server_updated_at TEXT,
                 created_at INTEGER NOT NULL
             )
-            """.trimIndent(),
+            """.trimIndent()
         )
         db.execSQL("CREATE INDEX idx_outbox_state ON outbox(state, owner)")
         db.execSQL("CREATE INDEX idx_outbox_entity ON outbox(entity_key)")
@@ -117,7 +117,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                 model_name TEXT NOT NULL DEFAULT '',
                 generated_at TEXT
             )
-            """.trimIndent(),
+            """.trimIndent()
         )
     }
 
@@ -139,7 +139,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
             arrayOf(start, end),
             null,
             null,
-            "date ASC",
+            "date ASC"
         ).use { cursor ->
             buildList { while (cursor.moveToNext()) add(cursor.toCachedDay()) }
         }
@@ -192,79 +192,78 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
      * content and baseline: if the remote content changed meanwhile, the old
      * baseline stays so the replay detects a conflict instead of overwriting.
      */
-    fun mergeWeekFromServer(start: String, end: String, reports: List<Pair<String, Pair<String, String?>>>) =
-        synchronized(lock) {
-            writable.beginTransaction()
-            try {
-                val seen = mutableSetOf<String>()
-                for ((date, pair) in reports) {
-                    val (serverContent, serverUpdatedAt) = pair
-                    seen += date
-                    val existing = dailyByDateUnlocked(date)
-                    if (existing == null) {
-                        writable.insertOrThrow(
-                            "daily_cache",
-                            null,
-                            ContentValues().apply {
-                                put("date", date)
-                                put("content", serverContent)
-                                put("server_content", serverContent)
-                                put("server_updated_at", serverUpdatedAt)
-                                put("pending", 0)
-                                put("deleted", 0)
-                            },
-                        )
-                    } else if (existing.pending) {
-                        // Only accept the remote value as a new baseline when it did
-                        // not change. Otherwise keep the old baseline so the send
-                        // path stops and asks before overwriting.
-                        val stale = existing.serverContent
-                        val unchanged = (stale.isNullOrEmpty() && serverContent.isEmpty()) || stale == serverContent
-                        if (unchanged) {
-                            writable.update(
-                                "daily_cache",
-                                ContentValues().apply {
-                                    put("server_content", serverContent)
-                                    put("server_updated_at", serverUpdatedAt)
-                                },
-                                "date = ?",
-                                arrayOf(date),
-                            )
+    fun mergeWeekFromServer(start: String, end: String, reports: List<Pair<String, Pair<String, String?>>>) = synchronized(lock) {
+        writable.beginTransaction()
+        try {
+            val seen = mutableSetOf<String>()
+            for ((date, pair) in reports) {
+                val (serverContent, serverUpdatedAt) = pair
+                seen += date
+                val existing = dailyByDateUnlocked(date)
+                if (existing == null) {
+                    writable.insertOrThrow(
+                        "daily_cache",
+                        null,
+                        ContentValues().apply {
+                            put("date", date)
+                            put("content", serverContent)
+                            put("server_content", serverContent)
+                            put("server_updated_at", serverUpdatedAt)
+                            put("pending", 0)
+                            put("deleted", 0)
                         }
-                    } else {
+                    )
+                } else if (existing.pending) {
+                    // Only accept the remote value as a new baseline when it did
+                    // not change. Otherwise keep the old baseline so the send
+                    // path stops and asks before overwriting.
+                    val stale = existing.serverContent
+                    val unchanged = (stale.isNullOrEmpty() && serverContent.isEmpty()) || stale == serverContent
+                    if (unchanged) {
                         writable.update(
                             "daily_cache",
                             ContentValues().apply {
-                                put("content", serverContent)
                                 put("server_content", serverContent)
                                 put("server_updated_at", serverUpdatedAt)
-                                put("pending", 0)
-                                put("deleted", 0)
                             },
                             "date = ?",
-                            arrayOf(date),
+                            arrayOf(date)
                         )
                     }
+                } else {
+                    writable.update(
+                        "daily_cache",
+                        ContentValues().apply {
+                            put("content", serverContent)
+                            put("server_content", serverContent)
+                            put("server_updated_at", serverUpdatedAt)
+                            put("pending", 0)
+                            put("deleted", 0)
+                        },
+                        "date = ?",
+                        arrayOf(date)
+                    )
                 }
-                val where = buildString {
-                    append("pending = 0 AND date BETWEEN ? AND ?")
-                    if (seen.isNotEmpty()) {
-                        append(" AND date NOT IN (")
-                        append(seen.joinToString(",") { "?" })
-                        append(")")
-                    }
-                }
-                val args = buildList {
-                    add(start)
-                    add(end)
-                    addAll(seen)
-                }.toTypedArray()
-                writable.delete("daily_cache", where, args)
-                writable.setTransactionSuccessful()
-            } finally {
-                writable.endTransaction()
             }
+            val where = buildString {
+                append("pending = 0 AND date BETWEEN ? AND ?")
+                if (seen.isNotEmpty()) {
+                    append(" AND date NOT IN (")
+                    append(seen.joinToString(",") { "?" })
+                    append(")")
+                }
+            }
+            val args = buildList {
+                add(start)
+                add(end)
+                addAll(seen)
+            }.toTypedArray()
+            writable.delete("daily_cache", where, args)
+            writable.setTransactionSuccessful()
+        } finally {
+            writable.endTransaction()
         }
+    }
 
     fun markDailyPushed(date: String, sentContent: String, serverUpdatedAt: String?) = synchronized(lock) {
         writable.beginTransaction()
@@ -288,7 +287,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
     fun markDailyAlreadySynced(
         date: String,
         serverContent: String,
-        serverUpdatedAt: String?,
+        serverUpdatedAt: String?
     ) = synchronized(lock) {
         val existing = dailyByDateUnlocked(date)
         if (existing == null) {
@@ -302,7 +301,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                     put("server_updated_at", serverUpdatedAt)
                     put("pending", 0)
                     put("deleted", 0)
-                },
+                }
             )
             return@synchronized
         }
@@ -339,23 +338,22 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
         }
     }
 
-    fun insertLocalTask(localId: String, content: String, deadline: String?, isCompleted: Boolean, createdAt: Long) =
-        synchronized(lock) {
-            writable.insertWithOnConflict(
-                "tasks_cache",
-                null,
-                ContentValues().apply {
-                    put("local_id", localId)
-                    put("content", content)
-                    put("deadline", deadline)
-                    put("is_completed", if (isCompleted) 1 else 0)
-                    put("dirty", 1)
-                    put("deleted", 0)
-                    put("created_at", createdAt)
-                },
-                SQLiteDatabase.CONFLICT_REPLACE,
-            )
-        }
+    fun insertLocalTask(localId: String, content: String, deadline: String?, isCompleted: Boolean, createdAt: Long) = synchronized(lock) {
+        writable.insertWithOnConflict(
+            "tasks_cache",
+            null,
+            ContentValues().apply {
+                put("local_id", localId)
+                put("content", content)
+                put("deadline", deadline)
+                put("is_completed", if (isCompleted) 1 else 0)
+                put("dirty", 1)
+                put("deleted", 0)
+                put("created_at", createdAt)
+            },
+            SQLiteDatabase.CONFLICT_REPLACE
+        )
+    }
 
     fun updateLocalTask(localId: String, content: String, deadline: String?, isCompleted: Boolean) = synchronized(lock) {
         writable.update(
@@ -367,7 +365,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                 put("dirty", 1)
             },
             "local_id = ?",
-            arrayOf(localId),
+            arrayOf(localId)
         )
     }
 
@@ -379,7 +377,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                 put("dirty", 1)
             },
             "local_id = ?",
-            arrayOf(localId),
+            arrayOf(localId)
         )
     }
 
@@ -409,7 +407,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                             put("deleted", 0)
                             put("created_at", task.createdAt)
                         },
-                        SQLiteDatabase.CONFLICT_REPLACE,
+                        SQLiteDatabase.CONFLICT_REPLACE
                     )
                 } else if (!existing.dirty && !existing.deleted) {
                     writable.update(
@@ -421,7 +419,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                             put("remote_updated_at", task.updatedAt)
                         },
                         "local_id = ?",
-                        arrayOf(existing.localId),
+                        arrayOf(existing.localId)
                     )
                 }
             }
@@ -450,25 +448,24 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                 put("dirty", 0)
             },
             "local_id = ?",
-            arrayOf(localId),
+            arrayOf(localId)
         )
     }
 
-    fun markTaskSynced(localId: String, content: String, deadline: String?, isCompleted: Boolean, remoteUpdatedAt: String?) =
-        synchronized(lock) {
-            writable.update(
-                "tasks_cache",
-                ContentValues().apply {
-                    put("content", content)
-                    put("deadline", deadline)
-                    put("is_completed", if (isCompleted) 1 else 0)
-                    put("remote_updated_at", remoteUpdatedAt)
-                    put("dirty", 0)
-                },
-                "local_id = ?",
-                arrayOf(localId),
-            )
-        }
+    fun markTaskSynced(localId: String, content: String, deadline: String?, isCompleted: Boolean, remoteUpdatedAt: String?) = synchronized(lock) {
+        writable.update(
+            "tasks_cache",
+            ContentValues().apply {
+                put("content", content)
+                put("deadline", deadline)
+                put("is_completed", if (isCompleted) 1 else 0)
+                put("remote_updated_at", remoteUpdatedAt)
+                put("dirty", 0)
+            },
+            "local_id = ?",
+            arrayOf(localId)
+        )
+    }
 
     fun finishTaskCreate(
         outboxId: Long,
@@ -478,7 +475,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
         content: String,
         deadline: String?,
         isCompleted: Boolean,
-        remoteUpdatedAt: String?,
+        remoteUpdatedAt: String?
     ) = synchronized(lock) {
         writable.beginTransaction()
         try {
@@ -494,7 +491,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                     "outbox",
                     ContentValues().apply { put("kind", OutboxKind.TASK_UPDATE.name) },
                     "id = ?",
-                    arrayOf(outboxId.toString()),
+                    arrayOf(outboxId.toString())
                 )
             }
             writable.setTransactionSuccessful()
@@ -510,7 +507,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
         content: String,
         deadline: String?,
         isCompleted: Boolean,
-        remoteUpdatedAt: String?,
+        remoteUpdatedAt: String?
     ) = synchronized(lock) {
         writable.beginTransaction()
         try {
@@ -548,14 +545,14 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
         date: String,
         payload: String,
         baseUpdatedAt: String?,
-        owner: String,
+        owner: String
     ): Long = synchronized(lock) {
         writable.beginTransaction()
         try {
             writable.delete(
                 "outbox",
                 "entity_key = ? AND (kind IN (?, ?) OR state = ?)",
-                arrayOf(date, OutboxKind.DAILY_SAVE.name, OutboxKind.DAILY_DELETE.name, OutboxState.FAILED.name),
+                arrayOf(date, OutboxKind.DAILY_SAVE.name, OutboxKind.DAILY_DELETE.name, OutboxState.FAILED.name)
             )
             val id = writable.insertOrThrow(
                 "outbox",
@@ -569,7 +566,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                     put("owner", owner)
                     put("revision", 1)
                     put("created_at", System.currentTimeMillis())
-                },
+                }
             )
             writable.setTransactionSuccessful()
             id
@@ -593,7 +590,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                                 put("revision", existing.revision + 1)
                             },
                             "id = ?",
-                            arrayOf(existing.id.toString()),
+                            arrayOf(existing.id.toString())
                         )
                         id = existing.id
                     } else {
@@ -610,14 +607,14 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                                 put("revision", existing.revision + 1)
                             },
                             "id = ?",
-                            arrayOf(existing.id.toString()),
+                            arrayOf(existing.id.toString())
                         )
                         id = existing.id
                     } else {
                         writable.delete(
                             "outbox",
                             "entity_key = ? AND (kind IN (?, ?) OR state = ?)",
-                            arrayOf(localId, OutboxKind.TASK_UPDATE.name, OutboxKind.TASK_DELETE.name, OutboxState.FAILED.name),
+                            arrayOf(localId, OutboxKind.TASK_UPDATE.name, OutboxKind.TASK_DELETE.name, OutboxState.FAILED.name)
                         )
                         id = insertTaskOutbox(kind, localId, payload, owner)
                     }
@@ -644,7 +641,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
             null,
             null,
             "id ASC",
-            "1",
+            "1"
         ).use { if (it.moveToFirst()) it.toOutbox() else null }
     }
 
@@ -673,7 +670,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
     fun markOutboxError(id: Long, message: String) = synchronized(lock) {
         writable.execSQL(
             "UPDATE outbox SET attempts = attempts + 1, last_error = ? WHERE id = ?",
-            arrayOf(message, id.toString()),
+            arrayOf(message, id.toString())
         )
     }
 
@@ -681,7 +678,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
     fun markOutboxFailed(id: Long, message: String) = synchronized(lock) {
         writable.execSQL(
             "UPDATE outbox SET state = ?, attempts = attempts + 1, last_error = ? WHERE id = ?",
-            arrayOf(OutboxState.FAILED.name, message, id.toString()),
+            arrayOf(OutboxState.FAILED.name, message, id.toString())
         )
     }
 
@@ -689,7 +686,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
     fun requeueFailed(owner: String) = synchronized(lock) {
         writable.execSQL(
             "UPDATE outbox SET state = ?, attempts = 0, last_error = NULL WHERE state = ? AND owner = ?",
-            arrayOf(OutboxState.PENDING.name, OutboxState.FAILED.name, owner),
+            arrayOf(OutboxState.PENDING.name, OutboxState.FAILED.name, owner)
         )
     }
 
@@ -698,7 +695,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
             "outbox",
             ContentValues().apply { put("kind", OutboxKind.TASK_UPDATE.name) },
             "id = ?",
-            arrayOf(id.toString()),
+            arrayOf(id.toString())
         )
     }
 
@@ -711,7 +708,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                 put("server_updated_at", serverUpdatedAt)
             },
             "id = ?",
-            arrayOf(id.toString()),
+            arrayOf(id.toString())
         )
     }
 
@@ -721,7 +718,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
         var failed = 0
         readable.rawQuery(
             "SELECT state, COUNT(*) FROM outbox WHERE owner = ? GROUP BY state",
-            arrayOf(owner),
+            arrayOf(owner)
         ).use { cursor ->
             while (cursor.moveToNext()) {
                 when (cursor.getString(0)) {
@@ -742,7 +739,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
             arrayOf(OutboxState.CONFLICT.name, owner),
             null,
             null,
-            "id ASC",
+            "id ASC"
         ).use { cursor ->
             buildList { while (cursor.moveToNext()) add(cursor.toOutbox()) }
         }
@@ -761,7 +758,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                         put("server_updated_at", item.serverUpdatedAt)
                     },
                     "date = ?",
-                    arrayOf(item.entityKey),
+                    arrayOf(item.entityKey)
                 )
             }
             writable.update(
@@ -773,7 +770,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                     putNull("server_updated_at")
                 },
                 "id = ?",
-                arrayOf(id.toString()),
+                arrayOf(id.toString())
             )
             writable.setTransactionSuccessful()
         } finally {
@@ -800,7 +797,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                             put("deleted", 0)
                         },
                         "date = ?",
-                        arrayOf(item.entityKey),
+                        arrayOf(item.entityKey)
                     )
                 }
             }
@@ -823,7 +820,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                 put("model_name", entry.modelName)
                 put("generated_at", entry.generatedAt)
             },
-            SQLiteDatabase.CONFLICT_REPLACE,
+            SQLiteDatabase.CONFLICT_REPLACE
         )
     }
 
@@ -834,7 +831,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                     cacheKey = it.getString(it.getColumnIndexOrThrow("cache_key")),
                     content = it.getString(it.getColumnIndexOrThrow("content")),
                     modelName = it.getString(it.getColumnIndexOrThrow("model_name")),
-                    generatedAt = it.getStringOrNull("generated_at"),
+                    generatedAt = it.getStringOrNull("generated_at")
                 )
             } else {
                 null
@@ -851,40 +848,35 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
     private val readable: SQLiteDatabase get() = readableDatabase
     private val writable: SQLiteDatabase get() = writableDatabase
 
-    private fun dailyByDateUnlocked(date: String): CachedDay? =
-        readable.query("daily_cache", null, "date = ?", arrayOf(date), null, null, null).use {
-            if (it.moveToFirst()) it.toCachedDay() else null
-        }
+    private fun dailyByDateUnlocked(date: String): CachedDay? = readable.query("daily_cache", null, "date = ?", arrayOf(date), null, null, null).use {
+        if (it.moveToFirst()) it.toCachedDay() else null
+    }
 
-    private fun taskByRemoteIdUnlocked(remoteId: Int): LocalTask? =
-        readable.query("tasks_cache", null, "remote_id = ?", arrayOf(remoteId.toString()), null, null, null).use {
-            if (it.moveToFirst()) it.toLocalTask() else null
-        }
+    private fun taskByRemoteIdUnlocked(remoteId: Int): LocalTask? = readable.query("tasks_cache", null, "remote_id = ?", arrayOf(remoteId.toString()), null, null, null).use {
+        if (it.moveToFirst()) it.toLocalTask() else null
+    }
 
-    private fun outboxForEntityUnlocked(entityKey: String): List<OutboxItem> =
-        readable.query("outbox", null, "entity_key = ?", arrayOf(entityKey), null, null, "id ASC").use { cursor ->
-            buildList { while (cursor.moveToNext()) add(cursor.toOutbox()) }
-        }
+    private fun outboxForEntityUnlocked(entityKey: String): List<OutboxItem> = readable.query("outbox", null, "entity_key = ?", arrayOf(entityKey), null, null, "id ASC").use { cursor ->
+        buildList { while (cursor.moveToNext()) add(cursor.toOutbox()) }
+    }
 
-    private fun outboxByIdUnlocked(id: Long): OutboxItem? =
-        readable.query("outbox", null, "id = ?", arrayOf(id.toString()), null, null, null).use {
-            if (it.moveToFirst()) it.toOutbox() else null
-        }
+    private fun outboxByIdUnlocked(id: Long): OutboxItem? = readable.query("outbox", null, "id = ?", arrayOf(id.toString()), null, null, null).use {
+        if (it.moveToFirst()) it.toOutbox() else null
+    }
 
-    private fun insertTaskOutbox(kind: OutboxKind, localId: String, payload: String, owner: String): Long =
-        writable.insertOrThrow(
-            "outbox",
-            null,
-            ContentValues().apply {
-                put("kind", kind.name)
-                put("entity_key", localId)
-                put("payload", payload)
-                put("state", OutboxState.PENDING.name)
-                put("owner", owner)
-                put("revision", 1)
-                put("created_at", System.currentTimeMillis())
-            },
-        )
+    private fun insertTaskOutbox(kind: OutboxKind, localId: String, payload: String, owner: String): Long = writable.insertOrThrow(
+        "outbox",
+        null,
+        ContentValues().apply {
+            put("kind", kind.name)
+            put("entity_key", localId)
+            put("payload", payload)
+            put("state", OutboxState.PENDING.name)
+            put("owner", owner)
+            put("revision", 1)
+            put("created_at", System.currentTimeMillis())
+        }
+    )
 
     private fun android.database.Cursor.toCachedDay() = CachedDay(
         date = getString(getColumnIndexOrThrow("date")),
@@ -892,7 +884,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
         serverContent = getStringOrNull("server_content"),
         serverUpdatedAt = getStringOrNull("server_updated_at"),
         pending = getInt(getColumnIndexOrThrow("pending")) == 1,
-        deleted = getInt(getColumnIndexOrThrow("deleted")) == 1,
+        deleted = getInt(getColumnIndexOrThrow("deleted")) == 1
     )
 
     private fun android.database.Cursor.toLocalTask() = LocalTask(
@@ -903,7 +895,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
         isCompleted = getInt(getColumnIndexOrThrow("is_completed")) == 1,
         dirty = getInt(getColumnIndexOrThrow("dirty")) == 1,
         deleted = getInt(getColumnIndexOrThrow("deleted")) == 1,
-        createdAt = getLong(getColumnIndexOrThrow("created_at")),
+        createdAt = getLong(getColumnIndexOrThrow("created_at"))
     )
 
     private fun android.database.Cursor.toOutbox() = OutboxItem(
@@ -919,7 +911,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
         lastError = getStringOrNull("last_error"),
         serverContent = getStringOrNull("server_content"),
         serverUpdatedAt = getStringOrNull("server_updated_at"),
-        createdAt = getLong(getColumnIndexOrThrow("created_at")),
+        createdAt = getLong(getColumnIndexOrThrow("created_at"))
     )
 
     companion object {
@@ -934,7 +926,7 @@ data class ServerTask(
     val deadline: String?,
     val isCompleted: Boolean,
     val updatedAt: String?,
-    val createdAt: Long,
+    val createdAt: Long
 )
 
 private fun android.database.Cursor.getStringOrNull(column: String): String? {

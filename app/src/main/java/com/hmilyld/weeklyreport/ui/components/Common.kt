@@ -40,7 +40,7 @@ fun ScreenHeader(
     kicker: String,
     title: String,
     subtitle: String? = null,
-    trailing: (@Composable () -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         // Reserve the 48dp action row even when a screen has no trailing
@@ -49,13 +49,13 @@ fun ScreenHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 48.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = kicker,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Bold
             )
             if (trailing != null) {
                 Box(modifier = Modifier.weight(1f))
@@ -66,14 +66,14 @@ fun ScreenHeader(
             text = title,
             style = MaterialTheme.typography.displaySmall,
             color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(top = Spacing.xs),
+            modifier = Modifier.padding(top = Spacing.xs)
         )
         if (subtitle != null) {
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = Spacing.sm),
+                modifier = Modifier.padding(top = Spacing.sm)
             )
         }
     }
@@ -82,7 +82,7 @@ fun ScreenHeader(
 @Composable
 fun PaperCard(
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
+    content: @Composable () -> Unit
 ) {
     Surface(
         modifier = modifier
@@ -90,13 +90,13 @@ fun PaperCard(
             .border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.55f),
-                shape = MaterialTheme.shapes.large,
+                shape = MaterialTheme.shapes.large
             ),
         color = MaterialTheme.colorScheme.surface,
         shape = MaterialTheme.shapes.large,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
-        content = content,
+        content = content
     )
 }
 
@@ -104,19 +104,19 @@ fun PaperCard(
 fun Pill(
     text: String,
     color: Color,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
     Surface(
         modifier = modifier,
         color = color.copy(alpha = 0.12f),
         contentColor = color,
-        shape = RoundedCornerShape(50),
+        shape = RoundedCornerShape(50)
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
         )
     }
 }
@@ -126,39 +126,39 @@ fun EmptyState(
     title: String,
     description: String,
     icon: ImageVector = Icons.Outlined.Inbox,
-    action: (@Composable () -> Unit)? = null,
+    action: (@Composable () -> Unit)? = null
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.xl, vertical = Spacing.xxl),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             modifier = Modifier
                 .size(52.dp)
                 .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
-            contentAlignment = Alignment.Center,
+            contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(24.dp)
             )
         }
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(top = Spacing.md),
+            modifier = Modifier.padding(top = Spacing.md)
         )
         Text(
             text = description,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = Spacing.xs),
+            modifier = Modifier.padding(top = Spacing.xs)
         )
         if (action != null) {
             Box(modifier = Modifier.padding(top = Spacing.lg)) { action() }
@@ -173,14 +173,14 @@ fun LoadingRow(text: String) {
             .fillMaxWidth()
             .padding(Spacing.lg),
         horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = Spacing.sm),
+            modifier = Modifier.padding(start = Spacing.sm)
         )
     }
 }
@@ -191,17 +191,17 @@ fun Banner(
     tone: Color = MaterialTheme.colorScheme.error,
     icon: ImageVector = Icons.Outlined.WarningAmber,
     action: (@Composable () -> Unit)? = null,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = tone.copy(alpha = 0.1f),
         contentColor = tone,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(14.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(18.dp))
             Text(
@@ -209,7 +209,7 @@ fun Banner(
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = Spacing.sm),
+                    .padding(start = Spacing.sm)
             )
             if (action != null) action()
         }
@@ -224,7 +224,7 @@ fun ConfirmDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     destructive: Boolean = false,
-    dismissLabel: String = stringResource(R.string.common_cancel),
+    dismissLabel: String = stringResource(R.string.common_cancel)
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -238,14 +238,14 @@ fun ConfirmDialog(
                         MaterialTheme.colorScheme.error
                     } else {
                         MaterialTheme.colorScheme.primary
-                    },
-                ),
+                    }
+                )
             ) {
                 Text(confirmLabel, fontWeight = FontWeight.SemiBold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(dismissLabel) }
-        },
+        }
     )
 }
