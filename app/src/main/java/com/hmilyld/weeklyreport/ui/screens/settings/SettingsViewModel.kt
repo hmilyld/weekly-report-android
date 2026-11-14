@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hmilyld.weeklyreport.AppContainer
 import com.hmilyld.weeklyreport.BuildConfig
+import com.hmilyld.weeklyreport.R
 import com.hmilyld.weeklyreport.data.local.OutboxCounts
 import com.hmilyld.weeklyreport.data.model.UserDto
 import com.hmilyld.weeklyreport.data.prefs.ThemeMode
@@ -11,6 +12,7 @@ import com.hmilyld.weeklyreport.data.sync.SyncResult
 import com.hmilyld.weeklyreport.network.ApiErrorKind
 import com.hmilyld.weeklyreport.network.ApiException
 import com.hmilyld.weeklyreport.notifications.TaskNotifier
+import com.hmilyld.weeklyreport.ui.UiMessage
 import com.hmilyld.weeklyreport.util.UrlRules
 import com.hmilyld.weeklyreport.widget.TodayWidgetProvider
 import kotlinx.coroutines.Dispatchers
@@ -28,13 +30,13 @@ data class SettingsUiState(
     val user: UserDto? = null,
     val loadingUser: Boolean = false,
     val testing: Boolean = false,
-    val testResult: String? = null,
+    val testResult: UiMessage? = null,
     val serverError: String? = null,
     val changingPassword: Boolean = false,
-    val passwordError: String? = null,
+    val passwordError: UiMessage? = null,
     val passwordSuccess: Boolean = false,
     val queue: OutboxCounts = OutboxCounts(0, 0),
-    val notice: String? = null
+    val notice: UiMessage? = null
 )
 
 class SettingsViewModel(private val container: AppContainer) : ViewModel() {
@@ -43,7 +45,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     )
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
 
-    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 8)
+    private val _messages = MutableSharedFlow<UiMessage>(extraBufferCapacity = 8)
     val messages = _messages.asSharedFlow()
 
     val theme: StateFlow<ThemeMode> = container.settings.theme
@@ -66,7 +68,11 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                 _state.update {
                     it.copy(
                         loadingUser = false,
-                        notice = if (error.kind == ApiErrorKind.NETWORK) "离线：暂时无法读取账号信息" else null
+                        notice = if (error.kind == ApiErrorKind.NETWORK) {
+                            UiMessage.Text(R.string.settings_notice_offline_account)
+                        } else {
+                            null
+                        }
                     )
                 }
             }
@@ -88,9 +94,9 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
             _state.update { it.copy(testing = true, testResult = null, serverError = null) }
             try {
                 container.api.healthAt(base)
-                _state.update { it.copy(testing = false, testResult = "连接成功") }
+                _state.update { it.copy(testing = false, testResult = UiMessage.Text(R.string.settings_test_success)) }
             } catch (error: ApiException) {
-                _state.update { it.copy(testing = false, testResult = error.message) }
+                _state.update { it.copy(testing = false, testResult = UiMessage.Raw(error.message)) }
             }
         }
     }
@@ -104,7 +110,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
         val base = (normalized as UrlRules.Result.Ok).baseUrl
         val previous = container.settings.serverBaseValue()
         if (base == previous) {
-            _state.update { it.copy(serverError = null, testResult = "地址没有变化") }
+            _state.update { it.copy(serverError = null, testResult = UiMessage.Text(R.string.settings_test_unchanged)) }
             return
         }
         viewModelScope.launch {
@@ -112,26 +118,26 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
             // session for this token, so a fresh login is the honest path.
             container.session.logout()
             container.settings.setServerBase(base)
-            _messages.emit("服务器地址已更新，请重新登录")
+            _messages.emit(UiMessage.Text(R.string.settings_server_saved_relogin))
         }
     }
 
     fun changePassword(oldPassword: String, newPassword: String, confirm: String) {
         when {
             oldPassword.isEmpty() -> {
-                _state.update { it.copy(passwordError = "请输入当前密码") }
+                _state.update { it.copy(passwordError = UiMessage.Text(R.string.settings_password_old_required)) }
                 return
             }
             newPassword.length < 8 -> {
-                _state.update { it.copy(passwordError = "新密码至少 8 位") }
+                _state.update { it.copy(passwordError = UiMessage.Text(R.string.settings_password_too_short)) }
                 return
             }
             !newPassword.any { it.isLetter() } || !newPassword.any { it.isDigit() } -> {
-                _state.update { it.copy(passwordError = "新密码需要同时包含字母和数字") }
+                _state.update { it.copy(passwordError = UiMessage.Text(R.string.settings_password_needs_mixed)) }
                 return
             }
             newPassword != confirm -> {
-                _state.update { it.copy(passwordError = "两次输入的新密码不一致") }
+                _state.update { it.copy(passwordError = UiMessage.Text(R.string.settings_password_mismatch)) }
                 return
             }
         }
@@ -140,14 +146,14 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
             try {
                 container.session.changePassword(oldPassword, newPassword)
                 _state.update { it.copy(changingPassword = false, passwordSuccess = true) }
-                _messages.emit("密码已修改，其他设备需要重新登录")
+                _messages.emit(UiMessage.Text(R.string.settings_password_changed))
             } catch (error: ApiException) {
                 // 402 keeps the session alive and points at the current password;
                 // 401 is handled by the session and returns to the login screen.
                 val message = when {
-                    error.isWrongPassword -> "当前密码不正确"
-                    error.requiresLogin -> error.message
-                    else -> error.message
+                    error.isWrongPassword -> UiMessage.Text(R.string.settings_password_wrong_old)
+                    error.requiresLogin -> UiMessage.Raw(error.message)
+                    else -> UiMessage.Raw(error.message)
                 }
                 _state.update { it.copy(changingPassword = false, passwordError = message) }
             }
@@ -170,9 +176,14 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
             }
             val message = when (result) {
                 is SyncResult.Done ->
-                    if (result.sent > 0) "已发送 ${result.sent} 条离线修改" else "没有待发送的修改"
-                is SyncResult.NeedsLogin -> result.reason
-                is SyncResult.Stopped -> result.reason
+                    if (result.sent > 0) {
+                        UiMessage.Text(R.string.common_queue_sent, listOf(result.sent))
+                    } else {
+                        UiMessage.Text(R.string.settings_queue_nothing_pending)
+                    }
+
+                is SyncResult.NeedsLogin -> UiMessage.Raw(result.reason)
+                is SyncResult.Stopped -> UiMessage.Raw(result.reason)
             }
             _messages.emit(message)
             refreshQueue()
@@ -186,7 +197,13 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     fun setBiometricEnabled(enabled: Boolean) {
         container.settings.setBiometricEnabled(enabled)
         viewModelScope.launch {
-            _messages.emit(if (enabled) "已开启生物识别解锁" else "已关闭生物识别解锁")
+            _messages.emit(
+                if (enabled) {
+                    UiMessage.Text(R.string.settings_biometric_enabled)
+                } else {
+                    UiMessage.Text(R.string.settings_biometric_disabled)
+                }
+            )
         }
     }
 
@@ -201,9 +218,11 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                 )
             }
             val message = when {
-                !TaskNotifier.hasPermission(container.appContext) -> "请先允许通知权限"
-                count == 0 -> "没有逾期或三天内到期的待办"
-                else -> "已发送 $count 条到期提醒"
+                !TaskNotifier.hasPermission(container.appContext) ->
+                    UiMessage.Text(R.string.settings_reminder_no_permission)
+
+                count == 0 -> UiMessage.Text(R.string.settings_reminder_none)
+                else -> UiMessage.Text(R.string.settings_reminder_sent, listOf(count))
             }
             _messages.emit(message)
         }
@@ -213,7 +232,11 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
         val requested = TodayWidgetProvider.requestPin(container.appContext)
         viewModelScope.launch {
             _messages.emit(
-                if (requested) "已请求添加主屏小部件" else "当前桌面不支持直接添加，请长按桌面手动添加"
+                if (requested) {
+                    UiMessage.Text(R.string.settings_widget_requested)
+                } else {
+                    UiMessage.Text(R.string.settings_widget_unsupported)
+                }
             )
         }
     }
@@ -221,7 +244,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     fun logout() {
         viewModelScope.launch {
             container.session.logout()
-            _messages.emit("已退出登录")
+            _messages.emit(UiMessage.Text(R.string.common_logged_out))
         }
     }
 

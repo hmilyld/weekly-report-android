@@ -3,6 +3,7 @@ package com.hmilyld.weeklyreport.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hmilyld.weeklyreport.AppContainer
+import com.hmilyld.weeklyreport.R
 import com.hmilyld.weeklyreport.data.local.OutboxCounts
 import com.hmilyld.weeklyreport.data.local.OutboxItem
 import com.hmilyld.weeklyreport.data.prefs.ThemeMode
@@ -26,7 +27,7 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     private val _conflicts = MutableStateFlow<List<OutboxItem>>(emptyList())
     val conflicts: StateFlow<List<OutboxItem>> = _conflicts.asStateFlow()
 
-    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 8)
+    private val _messages = MutableSharedFlow<UiMessage>(extraBufferCapacity = 8)
     val messages = _messages.asSharedFlow()
 
     init {
@@ -52,7 +53,7 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     fun resolveOverwrite(id: Long) {
         viewModelScope.launch {
             container.dailyRepository.resolveOverwrite(id)
-            _messages.emit("已用本地版本覆盖服务器")
+            _messages.emit(UiMessage.Text(R.string.app_conflict_use_local_done))
             refreshQueue()
         }
     }
@@ -60,7 +61,7 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     fun resolveKeepServer(id: Long) {
         viewModelScope.launch {
             container.dailyRepository.resolveKeepServer(id)
-            _messages.emit("已保留服务器版本")
+            _messages.emit(UiMessage.Text(R.string.app_conflict_keep_server_done))
             refreshQueue()
         }
     }
@@ -72,7 +73,7 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     fun logout() {
         viewModelScope.launch {
             container.session.logout()
-            _messages.emit("已退出登录")
+            _messages.emit(UiMessage.Text(R.string.common_logged_out))
         }
     }
 
@@ -85,11 +86,19 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
                 }
                 when (result) {
                     is com.hmilyld.weeklyreport.data.sync.SyncResult.Done ->
-                        _messages.emit(if (result.sent > 0) "已发送 ${result.sent} 条离线修改" else "队列已清空")
+                        _messages.emit(
+                            if (result.sent > 0) {
+                                UiMessage.Text(R.string.common_queue_sent, listOf(result.sent))
+                            } else {
+                                UiMessage.Text(R.string.app_queue_cleared)
+                            }
+                        )
+
                     is com.hmilyld.weeklyreport.data.sync.SyncResult.NeedsLogin ->
-                        _messages.emit(result.reason)
+                        _messages.emit(UiMessage.Raw(result.reason))
+
                     is com.hmilyld.weeklyreport.data.sync.SyncResult.Stopped ->
-                        _messages.emit(result.reason)
+                        _messages.emit(UiMessage.Raw(result.reason))
                 }
                 refreshQueue()
             }

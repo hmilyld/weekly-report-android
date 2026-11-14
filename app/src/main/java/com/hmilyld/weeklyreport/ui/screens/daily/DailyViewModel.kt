@@ -2,10 +2,12 @@ package com.hmilyld.weeklyreport.ui.screens.daily
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hmilyld.weeklyreport.R
 import com.hmilyld.weeklyreport.data.local.CachedDay
 import com.hmilyld.weeklyreport.data.repo.DailyRepository
 import com.hmilyld.weeklyreport.network.ApiErrorKind
 import com.hmilyld.weeklyreport.network.ApiException
+import com.hmilyld.weeklyreport.ui.UiMessage
 import com.hmilyld.weeklyreport.util.Dates
 import com.hmilyld.weeklyreport.util.ListInput
 import java.time.LocalDate
@@ -61,7 +63,7 @@ class DailyViewModel(
     private val _saving = MutableStateFlow(false)
     val saving: StateFlow<Boolean> = _saving.asStateFlow()
 
-    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 8)
+    private val _messages = MutableSharedFlow<UiMessage>(extraBufferCapacity = 8)
     val messages = _messages.asSharedFlow()
 
     private var loadedOnce = false
@@ -106,7 +108,7 @@ class DailyViewModel(
                     error = if (offline) null else error.message
                 )
             }
-            if (!offline) _messages.emit(error.message)
+            if (!offline) _messages.emit(UiMessage.Raw(error.message))
         }
         loadedOnce = true
     }
@@ -156,10 +158,10 @@ class DailyViewModel(
             try {
                 repo.save(editor.date, content)
                 _editor.value = null
-                _messages.emit("已保存到本机，联网后自动同步")
+                _messages.emit(UiMessage.Text(R.string.daily_saved_locally))
                 loadInternal(showLoading = false)
             } catch (error: ApiException) {
-                _messages.emit(error.message)
+                _messages.emit(UiMessage.Raw(error.message))
             } finally {
                 _saving.value = false
             }
@@ -173,10 +175,10 @@ class DailyViewModel(
             try {
                 repo.delete(editor.date)
                 _editor.value = null
-                _messages.emit("已删除，联网后同步")
+                _messages.emit(UiMessage.Text(R.string.daily_deleted_locally))
                 loadInternal(showLoading = false)
             } catch (error: ApiException) {
-                _messages.emit(error.message)
+                _messages.emit(UiMessage.Raw(error.message))
             } finally {
                 _saving.value = false
             }

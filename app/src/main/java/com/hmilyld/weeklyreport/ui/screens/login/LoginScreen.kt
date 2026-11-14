@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hmilyld.weeklyreport.R
+import com.hmilyld.weeklyreport.ui.asText
 import com.hmilyld.weeklyreport.ui.components.Banner
 import com.hmilyld.weeklyreport.ui.theme.Spacing
 
@@ -134,10 +135,14 @@ fun LoginScreen(
                 singleLine = true,
                 isError = state.serverError != null,
                 supportingText = {
+                    val serverError = state.serverError
+                    val testResult = state.testResult
                     Text(
-                        text = state.serverError
-                            ?: state.testResult
-                            ?: stringResource(R.string.login_server_hint)
+                        text = when {
+                            serverError != null -> serverError
+                            testResult != null -> testResult.asText()
+                            else -> stringResource(R.string.login_server_hint)
+                        }
                     )
                 },
                 shape = RoundedCornerShape(14.dp),
@@ -215,9 +220,10 @@ fun LoginScreen(
                 keyboardActions = KeyboardActions(onDone = { viewModel.login() })
             )
 
-            if (state.formError != null) {
+            val formError = state.formError
+            if (formError != null) {
                 Text(
-                    text = state.formError.orEmpty(),
+                    text = formError.asText(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(top = Spacing.sm)

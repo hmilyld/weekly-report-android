@@ -63,6 +63,7 @@ import com.hmilyld.weeklyreport.data.prefs.ThemeMode
 import com.hmilyld.weeklyreport.notifications.NotificationPermission
 import com.hmilyld.weeklyreport.notifications.TaskNotifier
 import com.hmilyld.weeklyreport.ui.BiometricUi
+import com.hmilyld.weeklyreport.ui.asText
 import com.hmilyld.weeklyreport.ui.components.ConfirmDialog
 import com.hmilyld.weeklyreport.ui.components.PaperCard
 import com.hmilyld.weeklyreport.ui.components.Pill
@@ -131,14 +132,15 @@ fun SettingsScreen(
                 singleLine = true,
                 isError = state.serverError != null,
                 supportingText = {
+                    val serverError = state.serverError
+                    val testResult = state.testResult
                     Text(
-                        state.serverError
-                            ?: state.testResult
-                            ?: if (BuildConfig.DEBUG) {
-                                stringResource(R.string.settings_server_hint_debug)
-                            } else {
-                                stringResource(R.string.settings_server_hint_release)
-                            }
+                        when {
+                            serverError != null -> serverError
+                            testResult != null -> testResult.asText()
+                            BuildConfig.DEBUG -> stringResource(R.string.settings_server_hint_debug)
+                            else -> stringResource(R.string.settings_server_hint_release)
+                        }
                     )
                 },
                 shape = MaterialTheme.shapes.small
@@ -220,9 +222,10 @@ fun SettingsScreen(
                     }
                 }
             }
-            if (state.notice != null) {
+            val notice = state.notice
+            if (notice != null) {
                 Text(
-                    text = state.notice.orEmpty(),
+                    text = notice.asText(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.padding(top = Spacing.xs)
@@ -610,9 +613,10 @@ private fun PasswordDialog(
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation()
                 )
-                if (state.passwordError != null) {
+                val passwordError = state.passwordError
+                if (passwordError != null) {
                     Text(
-                        text = state.passwordError.orEmpty(),
+                        text = passwordError.asText(),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(top = Spacing.sm)

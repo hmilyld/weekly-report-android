@@ -184,6 +184,7 @@ private fun LoggedInRoot(
     )
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarContext = LocalContext.current
     val scope = rememberCoroutineScope()
     val saveableStates = rememberSaveableStateHolder()
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.DAILY.name) }
@@ -231,7 +232,7 @@ private fun LoggedInRoot(
             settingsViewModel.messages,
             appViewModel.messages
         ).collect { message ->
-            snackbarHostState.showSnackbar(message, withDismissAction = true)
+            snackbarHostState.showSnackbar(message.resolve(snackbarContext), withDismissAction = true)
         }
     }
 

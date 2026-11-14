@@ -23,6 +23,8 @@
     <string name="common_server_address">服务器地址</string>
     <string name="common_previous_period">上一周期</string>
     <string name="common_next_period">下一周期</string>
+    <string name="common_logged_out">已退出登录</string>
+    <string name="common_queue_sent">已发送 %1$d 条离线修改</string>
 
     <!-- App root: navigation, queue banners, conflict dialog -->
     <string name="app_tab_daily">日报</string>
@@ -43,6 +45,9 @@
     <string name="app_conflict_overwrite">用本地覆盖</string>
     <string name="app_conflict_keep_server">保留服务器版本</string>
     <string name="app_conflict_later">稍后</string>
+    <string name="app_conflict_use_local_done">已用本地版本覆盖服务器</string>
+    <string name="app_conflict_keep_server_done">已保留服务器版本</string>
+    <string name="app_queue_cleared">队列已清空</string>
 
     <!-- Daily screen -->
     <string name="daily_kicker">日报 · DAILY</string>
@@ -66,6 +71,8 @@
     <string name="daily_discard_body">这一天的内容还没有保存，离开后会丢失这次修改。</string>
     <string name="daily_delete_title">删除这条日报？</string>
     <string name="daily_delete_body">%1$s 的记录将被删除，删除后无法恢复。</string>
+    <string name="daily_saved_locally">已保存到本机，联网后自动同步</string>
+    <string name="daily_deleted_locally">已删除，联网后同步</string>
 
     <!-- Component previews -->
     <string name="previews_today_progress">今天的进展</string>
@@ -100,6 +107,12 @@
     <string name="tasks_deadline_date">%1$d月%2$d日</string>
     <string name="tasks_deadline_set">截止日期</string>
     <string name="tasks_deadline_clear">清除截止日期</string>
+    <string name="tasks_error_empty_content">请输入待办内容</string>
+    <string name="tasks_error_empty_content_edit">待办内容不能为空</string>
+    <string name="tasks_error_deadline_past">截止日期不能早于今天</string>
+    <string name="tasks_added">已添加待办</string>
+    <string name="tasks_saved">已保存修改</string>
+    <string name="tasks_deleted">已删除待办</string>
 
     <!-- Deadline notifications -->
     <string name="tasks_notification_name">待办到期提醒</string>
@@ -146,6 +159,9 @@
     <string name="reports_regenerate_body">服务器会再次调用 LLM 并覆盖当前内容，手工修改也会被覆盖。</string>
     <string name="reports_share_subject">周记 %1$s</string>
     <string name="reports_share_chooser">分享%1$s</string>
+    <string name="reports_generated_weekly">周报已生成</string>
+    <string name="reports_generated_monthly">月报已生成</string>
+    <string name="reports_saved">已保存</string>
 
     <!-- Settings screen -->
     <string name="settings_kicker">设置 · SETTINGS</string>
@@ -201,6 +217,24 @@
     <string name="settings_password_current">当前密码</string>
     <string name="settings_password_new">新密码（至少 8 位，含字母和数字）</string>
     <string name="settings_password_confirm">再次输入新密码</string>
+    <string name="settings_test_success">连接成功</string>
+    <string name="settings_test_unchanged">地址没有变化</string>
+    <string name="settings_notice_offline_account">离线：暂时无法读取账号信息</string>
+    <string name="settings_server_saved_relogin">服务器地址已更新，请重新登录</string>
+    <string name="settings_password_old_required">请输入当前密码</string>
+    <string name="settings_password_too_short">新密码至少 8 位</string>
+    <string name="settings_password_needs_mixed">新密码需要同时包含字母和数字</string>
+    <string name="settings_password_mismatch">两次输入的新密码不一致</string>
+    <string name="settings_password_wrong_old">当前密码不正确</string>
+    <string name="settings_password_changed">密码已修改，其他设备需要重新登录</string>
+    <string name="settings_queue_nothing_pending">没有待发送的修改</string>
+    <string name="settings_biometric_enabled">已开启生物识别解锁</string>
+    <string name="settings_biometric_disabled">已关闭生物识别解锁</string>
+    <string name="settings_reminder_no_permission">请先允许通知权限</string>
+    <string name="settings_reminder_none">没有逾期或三天内到期的待办</string>
+    <string name="settings_reminder_sent">已发送 %1$d 条到期提醒</string>
+    <string name="settings_widget_requested">已请求添加主屏小部件</string>
+    <string name="settings_widget_unsupported">当前桌面不支持直接添加，请长按桌面手动添加</string>
 
     <!-- Login screen -->
     <string name="login_kicker">周记 · WEEKLY LOG</string>
@@ -214,6 +248,9 @@
     <string name="login_show_password">显示密码</string>
     <string name="login_action">登录</string>
     <string name="login_footer">密码只用于换取登录令牌，不会保存在设备上；令牌由 Android Keystore 加密。</string>
+    <string name="login_test_success_saved">连接成功，地址已保存</string>
+    <string name="login_error_credentials">请填写用户名和密码</string>
+    <string name="login_error_wrong_password">用户名或密码错误</string>
 
     <!-- Lock screen -->
     <string name="lock_title">周记已锁定</string>

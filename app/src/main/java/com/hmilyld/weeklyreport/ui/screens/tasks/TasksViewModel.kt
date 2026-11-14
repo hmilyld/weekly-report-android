@@ -2,10 +2,12 @@ package com.hmilyld.weeklyreport.ui.screens.tasks
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hmilyld.weeklyreport.R
 import com.hmilyld.weeklyreport.data.local.LocalTask
 import com.hmilyld.weeklyreport.data.repo.TaskRepository
 import com.hmilyld.weeklyreport.network.ApiErrorKind
 import com.hmilyld.weeklyreport.network.ApiException
+import com.hmilyld.weeklyreport.ui.UiMessage
 import com.hmilyld.weeklyreport.util.Dates
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
@@ -43,7 +45,7 @@ class TasksViewModel(
     private val _state = MutableStateFlow(TasksUiState())
     val state: StateFlow<TasksUiState> = _state.asStateFlow()
 
-    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 8)
+    private val _messages = MutableSharedFlow<UiMessage>(extraBufferCapacity = 8)
     val messages = _messages.asSharedFlow()
 
     init {
@@ -76,7 +78,7 @@ class TasksViewModel(
                         error = if (offline) null else error.message
                     )
                 }
-                if (!offline) _messages.emit(error.message)
+                if (!offline) _messages.emit(UiMessage.Raw(error.message))
             } finally {
                 reloadLocal()
                 _state.update { it.copy(loading = false, refreshing = false) }
@@ -94,7 +96,7 @@ class TasksViewModel(
                 _state.update { it.copy(completedLimit = it.completedLimit + TasksUiState.PAGE_SIZE) }
                 reloadLocal()
             } catch (error: ApiException) {
-                _messages.emit(error.message)
+                _messages.emit(UiMessage.Raw(error.message))
             } finally {
                 _state.update { it.copy(loadingMore = false) }
             }
@@ -104,16 +106,16 @@ class TasksViewModel(
     fun create(content: String, deadline: LocalDate?) {
         val trimmed = content.trim()
         if (trimmed.isEmpty()) {
-            viewModelScope.launch { _messages.emit("请输入待办内容") }
+            viewModelScope.launch { _messages.emit(UiMessage.Text(R.string.tasks_error_empty_content)) }
             return
         }
         if (deadline != null && deadline.isBefore(LocalDate.now())) {
-            viewModelScope.launch { _messages.emit("截止日期不能早于今天") }
+            viewModelScope.launch { _messages.emit(UiMessage.Text(R.string.tasks_error_deadline_past)) }
             return
         }
         viewModelScope.launch {
             repo.create(trimmed, deadline?.let(Dates::iso))
-            _messages.emit("已添加待办")
+            _messages.emit(UiMessage.Text(R.string.tasks_added))
             reloadLocal()
         }
     }
@@ -128,16 +130,16 @@ class TasksViewModel(
     fun edit(localId: String, content: String, deadline: LocalDate?, deadlineChanged: Boolean) {
         val trimmed = content.trim()
         if (trimmed.isEmpty()) {
-            viewModelScope.launch { _messages.emit("待办内容不能为空") }
+            viewModelScope.launch { _messages.emit(UiMessage.Text(R.string.tasks_error_empty_content_edit)) }
             return
         }
         if (deadlineChanged && deadline != null && deadline.isBefore(LocalDate.now())) {
-            viewModelScope.launch { _messages.emit("截止日期不能早于今天") }
+            viewModelScope.launch { _messages.emit(UiMessage.Text(R.string.tasks_error_deadline_past)) }
             return
         }
         viewModelScope.launch {
             repo.edit(localId, trimmed, deadline?.let(Dates::iso), deadlineChanged)
-            _messages.emit("已保存修改")
+            _messages.emit(UiMessage.Text(R.string.tasks_saved))
             reloadLocal()
         }
     }
@@ -145,7 +147,7 @@ class TasksViewModel(
     fun delete(localId: String) {
         viewModelScope.launch {
             repo.delete(localId)
-            _messages.emit("已删除待办")
+            _messages.emit(UiMessage.Text(R.string.tasks_deleted))
             reloadLocal()
         }
     }

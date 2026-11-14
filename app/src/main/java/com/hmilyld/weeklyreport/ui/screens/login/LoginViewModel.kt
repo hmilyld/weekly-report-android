@@ -3,11 +3,13 @@ package com.hmilyld.weeklyreport.ui.screens.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hmilyld.weeklyreport.BuildConfig
+import com.hmilyld.weeklyreport.R
 import com.hmilyld.weeklyreport.data.SessionManager
 import com.hmilyld.weeklyreport.data.prefs.SettingsStore
 import com.hmilyld.weeklyreport.network.ApiClient
 import com.hmilyld.weeklyreport.network.ApiErrorKind
 import com.hmilyld.weeklyreport.network.ApiException
+import com.hmilyld.weeklyreport.ui.UiMessage
 import com.hmilyld.weeklyreport.util.UrlRules
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,8 +25,8 @@ data class LoginUiState(
     val loggingIn: Boolean = false,
     val testing: Boolean = false,
     val serverError: String? = null,
-    val formError: String? = null,
-    val testResult: String? = null
+    val formError: UiMessage? = null,
+    val testResult: UiMessage? = null
 )
 
 class LoginViewModel(
@@ -78,9 +80,11 @@ class LoginViewModel(
             try {
                 api.healthAt(base)
                 settings.setServerBase(base)
-                _state.update { it.copy(testResult = "连接成功，地址已保存", testing = false) }
+                _state.update {
+                    it.copy(testResult = UiMessage.Text(R.string.login_test_success_saved), testing = false)
+                }
             } catch (error: ApiException) {
-                _state.update { it.copy(testResult = error.message, testing = false) }
+                _state.update { it.copy(testResult = UiMessage.Raw(error.message), testing = false) }
             }
         }
     }
@@ -89,7 +93,7 @@ class LoginViewModel(
         val state = _state.value
         if (state.loggingIn) return
         if (state.username.isBlank() || state.password.isEmpty()) {
-            _state.update { it.copy(formError = "请填写用户名和密码") }
+            _state.update { it.copy(formError = UiMessage.Text(R.string.login_error_credentials)) }
             return
         }
         val normalized = UrlRules.validateAndNormalize(state.serverInput, BuildConfig.DEBUG)
@@ -106,11 +110,11 @@ class LoginViewModel(
                 _state.update { it.copy(password = "", loggingIn = false) }
             } catch (error: ApiException) {
                 val message = when {
-                    error.status == 401 -> "用户名或密码错误"
-                    error.status == 429 -> error.message
-                    error.kind == ApiErrorKind.NETWORK -> error.message
-                    error.kind == ApiErrorKind.NOT_CONFIGURED -> error.message
-                    else -> error.message
+                    error.status == 401 -> UiMessage.Text(R.string.login_error_wrong_password)
+                    error.status == 429 -> UiMessage.Raw(error.message)
+                    error.kind == ApiErrorKind.NETWORK -> UiMessage.Raw(error.message)
+                    error.kind == ApiErrorKind.NOT_CONFIGURED -> UiMessage.Raw(error.message)
+                    else -> UiMessage.Raw(error.message)
                 }
                 _state.update { it.copy(loggingIn = false, formError = message) }
             }

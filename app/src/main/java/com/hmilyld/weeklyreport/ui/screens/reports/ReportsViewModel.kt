@@ -2,9 +2,11 @@ package com.hmilyld.weeklyreport.ui.screens.reports
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hmilyld.weeklyreport.R
 import com.hmilyld.weeklyreport.data.repo.ReportRepository
 import com.hmilyld.weeklyreport.network.ApiErrorKind
 import com.hmilyld.weeklyreport.network.ApiException
+import com.hmilyld.weeklyreport.ui.UiMessage
 import com.hmilyld.weeklyreport.util.Dates
 import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -55,7 +57,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
     private val _state = MutableStateFlow(ReportUiState())
     val state: StateFlow<ReportUiState> = _state.asStateFlow()
 
-    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 8)
+    private val _messages = MutableSharedFlow<UiMessage>(extraBufferCapacity = 8)
     val messages = _messages.asSharedFlow()
 
     private var loadSeq = 0
@@ -161,7 +163,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
                     _state.update {
                         it.copy(error = error.message, loading = false)
                     }
-                    _messages.emit(error.message)
+                    _messages.emit(UiMessage.Raw(error.message))
                 }
             } finally {
                 if (seq == loadSeq) _state.update { it.copy(loading = false) }
@@ -193,11 +195,17 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
                 if (_state.value.periodKey != requestPeriod) return@launch
                 applyReport(content, modelName, generatedAt)
                 _state.update { it.copy(notGenerated = false) }
-                _messages.emit(if (state.cadence == ReportCadence.WEEKLY) "周报已生成" else "月报已生成")
+                _messages.emit(
+                    if (state.cadence == ReportCadence.WEEKLY) {
+                        UiMessage.Text(R.string.reports_generated_weekly)
+                    } else {
+                        UiMessage.Text(R.string.reports_generated_monthly)
+                    }
+                )
             } catch (error: ApiException) {
                 if (!error.requiresLogin) {
                     _state.update { it.copy(error = error.message) }
-                    _messages.emit(error.message)
+                    _messages.emit(UiMessage.Raw(error.message))
                 }
             } finally {
                 _state.update { it.copy(generating = false) }
@@ -242,11 +250,11 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
                 if (_state.value.periodKey != requestPeriod) return@launch
                 applyReport(content, modelName, generatedAt)
                 _state.update { it.copy(editing = false, draft = "") }
-                _messages.emit("已保存")
+                _messages.emit(UiMessage.Text(R.string.reports_saved))
             } catch (error: ApiException) {
                 if (!error.requiresLogin) {
                     _state.update { it.copy(error = error.message) }
-                    _messages.emit(error.message)
+                    _messages.emit(UiMessage.Raw(error.message))
                 }
             } finally {
                 _state.update { it.copy(saving = false) }
