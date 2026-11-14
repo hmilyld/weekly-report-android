@@ -42,6 +42,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,12 +71,17 @@ fun ReportsScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
     var pendingAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     var showRegenerateConfirm by remember { mutableStateOf(false) }
     var showCancelEditConfirm by remember { mutableStateOf(false) }
 
     fun guarded(action: () -> Unit) {
         if (state.dirty) pendingAction = action else action()
+    }
+
+    LaunchedEffect(state.generating) {
+        if (state.generating) scrollState.animateScrollTo(0)
     }
 
     val label = if (state.cadence == ReportCadence.WEEKLY) {
@@ -88,7 +94,7 @@ fun ReportsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
             .padding(horizontal = Spacing.lg),
     ) {
         ScreenHeader(
@@ -140,6 +146,41 @@ fun ReportsScreen(
                     tone = MaterialTheme.colorScheme.secondary,
                     icon = Icons.Outlined.CloudOff,
                 )
+            }
+        }
+
+        if (state.content.isNotBlank() && !state.editing && !state.loading) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = Spacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "${periodName}正文",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = viewModel::startEdit) {
+                    Icon(
+                        Icons.Outlined.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Text("编辑", modifier = Modifier.padding(start = Spacing.xs))
+                }
+                TextButton(
+                    onClick = { showRegenerateConfirm = true },
+                    enabled = !state.generating,
+                ) {
+                    Icon(
+                        Icons.Outlined.AutoAwesome,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Text("重新生成", modifier = Modifier.padding(start = Spacing.xs))
+                }
             }
         }
 
@@ -305,6 +346,7 @@ fun ReportsScreen(
                                         onNotify("已复制${periodName}")
                                     },
                                     enabled = state.content.isNotBlank(),
+                                    modifier = Modifier.weight(1f),
                                 ) {
                                     Icon(
                                         Icons.Outlined.ContentCopy,
@@ -320,6 +362,7 @@ fun ReportsScreen(
                                         shareText(context, periodName, state.content)
                                     },
                                     enabled = state.content.isNotBlank(),
+                                    modifier = Modifier.weight(1f),
                                 ) {
                                     Icon(
                                         Icons.Outlined.Send,
@@ -327,24 +370,6 @@ fun ReportsScreen(
                                         modifier = Modifier.size(16.dp),
                                     )
                                     Text("复制并分享", modifier = Modifier.padding(start = Spacing.xs))
-                                }
-                                IconButton(onClick = viewModel::startEdit) {
-                                    Icon(Icons.Outlined.Edit, contentDescription = "编辑$periodName")
-                                }
-                            }
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = Spacing.xs),
-                                horizontalArrangement = Arrangement.End,
-                            ) {
-                                TextButton(onClick = { showRegenerateConfirm = true }) {
-                                    Icon(
-                                        Icons.Outlined.AutoAwesome,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
-                                    )
-                                    Text("重新生成", modifier = Modifier.padding(start = Spacing.xs))
                                 }
                             }
                         }
