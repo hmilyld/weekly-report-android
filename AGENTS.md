@@ -218,3 +218,15 @@ $env:PYTHONIOENCODING = 'utf-8'
 - Release 已签名且只允许 HTTPS；
 - 新增/修改的离线、冲突、认证逻辑有测试或明确的真机验证记录；
 - 不修改 `weekly-report` 仓库，不提交任何密钥或个人数据。
+
+## 11. 发布流程
+
+版本号唯一来源是 `gradle.properties` 的 `app.versionName` / `app.versionCode`；`versionName` 必须等于 Git 标签去掉 `v` 的部分（标签 `v1.0.0` ↔ `app.versionName=1.0.0`）。
+
+1. 改 `gradle.properties` 的 `app.versionName` 与 `app.versionCode`（`versionCode` 必须递增）。
+2. 在 `CHANGELOG.md` 顶部新增 `## [x.y.z] - YYYY-MM-DD` 段落，写清新增/变更/修复；发布流水线会原样取这一段作为发布说明，缺少该段落会让构建失败。
+3. 提交改动（`chore: release x.y.z`）。
+4. 打附注标签并推送：`git tag -a vx.y.z -m "周记 x.y.z"` → `git push origin vx.y.z`。
+5. 标签推送触发 `.github/workflows/release.yml`：校验版本号与 CHANGELOG、跑 Debug/Release 两套校验、构建 APK、创建 GitHub Release。仓库配置 `KEYSTORE_BASE64`、`KEYSTORE_PASSWORD`、`KEY_ALIAS`、`KEY_PASSWORD` 四个 secret 时产物已签名，否则发布说明会标注「未签名」。
+
+普通提交与 PR 仍然只跑 `.github/workflows/android.yml`（不发布）。
