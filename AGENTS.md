@@ -111,6 +111,7 @@ AppDatabase (SQLite) ──► outbox ──► SyncEngine ──► ApiClient
 - 通知权限入口统一走 `NotificationPermission.openSettings`（系统通知设置页），不要改回 `RequestPermission`：部分 MIUI/HyperOS 运行时弹窗会直接失败或关闭应用；返回时通过 `ON_RESUME` 重新检查权限。
 - 报告页动作分层：编辑/重新生成放在正文上方的文档工具栏，复制/复制并分享留在正文底部；生成状态紧邻工具栏，避免点了重新生成还要向上找提示。
 - 所有可点击元素至少 48dp；破坏性操作必须二次确认。
+- 启动页（`AppRoot`）按窗口宽度切换导航形态：`< 600dp` 用 `NavigationBar`，`>= 600dp` 用 `NavigationRail`；正文区最宽 `840dp` 且水平居中，避免平板上一行拉太长。
 
 ### 4.6 列表输入与中文 IME
 

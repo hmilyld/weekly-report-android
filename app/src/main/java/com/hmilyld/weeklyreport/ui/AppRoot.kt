@@ -4,11 +4,15 @@ import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -29,6 +33,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -44,6 +51,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -250,91 +258,132 @@ private fun LoggedInRoot(
         selectedTab = AppTab.DAILY.name
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        bottomBar = {
-            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                AppTab.entries.forEach { entry ->
-                    NavigationBarItem(
-                        selected = tab == entry,
-                        onClick = { selectedTab = entry.name },
-                        icon = {
-                            Icon(
-                                imageVector = entry.icon(tab == entry),
-                                // The label below already names the tab; a
-                                // description here would be read twice.
-                                contentDescription = null
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        // From 600dp up the destinations move into a navigation rail, which is
+        // the Material 3 answer for tablets, foldables and landscape phones.
+        val wide = maxWidth >= 600.dp
+        Row(modifier = Modifier.fillMaxSize()) {
+            if (wide) {
+                NavigationRail(containerColor = MaterialTheme.colorScheme.surface) {
+                    AppTab.entries.forEach { entry ->
+                        NavigationRailItem(
+                            selected = tab == entry,
+                            onClick = { selectedTab = entry.name },
+                            icon = { Icon(entry.icon(tab == entry), contentDescription = null) },
+                            label = { Text(stringResource(entry.labelRes)) },
+                            colors = NavigationRailItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer
                             )
-                        },
-                        label = { Text(stringResource(entry.labelRes)) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer
                         )
-                    )
+                    }
                 }
             }
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            when {
-                counts.conflicts > 0 -> Banner(
-                    text = stringResource(R.string.app_banner_conflict_count, counts.conflicts),
-                    action = {
-                        TextButton(onClick = { showConflicts = true }) {
-                            Text(stringResource(R.string.app_banner_action))
+            Scaffold(
+                modifier = Modifier.weight(1f),
+                containerColor = MaterialTheme.colorScheme.background,
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+                bottomBar = {
+                    if (!wide) {
+                        NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+                            AppTab.entries.forEach { entry ->
+                                NavigationBarItem(
+                                    selected = tab == entry,
+                                    onClick = { selectedTab = entry.name },
+                                    icon = {
+                                        Icon(
+                                            imageVector = entry.icon(tab == entry),
+                                            // The label below already names the
+                                            // tab; a description here would be
+                                            // read twice.
+                                            contentDescription = null
+                                        )
+                                    },
+                                    label = { Text(stringResource(entry.labelRes)) },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                                    )
+                                )
+                            }
                         }
-                    },
-                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
-                )
-
-                counts.failed > 0 -> Banner(
-                    text = stringResource(R.string.app_banner_failed_count, counts.failed),
-                    tone = MaterialTheme.colorScheme.error,
-                    icon = Icons.Outlined.WarningAmber,
-                    action = {
-                        TextButton(onClick = { selectedTab = AppTab.SETTINGS.name }) {
-                            Text(stringResource(R.string.app_banner_action))
-                        }
-                    },
-                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
-                )
-
-                counts.pending > 0 -> Banner(
-                    text = stringResource(R.string.app_banner_pending_count, counts.pending),
-                    tone = MaterialTheme.colorScheme.secondary,
-                    icon = Icons.Outlined.Sync,
-                    action = {
-                        TextButton(onClick = appViewModel::retryQueue) {
-                            Text(stringResource(R.string.common_retry))
-                        }
-                    },
-                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
-                )
-            }
-
-            Box(modifier = Modifier.weight(1f)) {
-                // Each tab keeps its own scroll position and text fields when
-                // the user switches away and back.
-                saveableStates.SaveableStateProvider(tab.name) {
-                    when (tab) {
-                        AppTab.DAILY -> DailyScreen(dailyViewModel)
-                        AppTab.TASKS -> TasksScreen(tasksViewModel)
-                        AppTab.REPORTS -> ReportsScreen(reportsViewModel, onNotify = notify)
-                        AppTab.SETTINGS -> SettingsScreen(
-                            viewModel = settingsViewModel,
-                            theme = theme,
-                            biometricEnabled = biometricEnabled,
-                            onThemeChange = appViewModel::setTheme,
-                            onBiometricChange = settingsViewModel::setBiometricEnabled,
-                            onNotify = notify
+                    }
+                }
+            ) { innerPadding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) {
+                    when {
+                        counts.conflicts > 0 -> Banner(
+                            text = stringResource(R.string.app_banner_conflict_count, counts.conflicts),
+                            action = {
+                                TextButton(onClick = { showConflicts = true }) {
+                                    Text(stringResource(R.string.app_banner_action))
+                                }
+                            },
+                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
                         )
+
+                        counts.failed > 0 -> Banner(
+                            text = stringResource(R.string.app_banner_failed_count, counts.failed),
+                            tone = MaterialTheme.colorScheme.error,
+                            icon = Icons.Outlined.WarningAmber,
+                            action = {
+                                TextButton(onClick = { selectedTab = AppTab.SETTINGS.name }) {
+                                    Text(stringResource(R.string.app_banner_action))
+                                }
+                            },
+                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
+                        )
+
+                        counts.pending > 0 -> Banner(
+                            text = stringResource(R.string.app_banner_pending_count, counts.pending),
+                            tone = MaterialTheme.colorScheme.secondary,
+                            icon = Icons.Outlined.Sync,
+                            action = {
+                                TextButton(onClick = appViewModel::retryQueue) {
+                                    Text(stringResource(R.string.common_retry))
+                                }
+                            },
+                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        // Reading and writing screens get a comfortable line length on
+                        // wide windows instead of stretching across the whole tablet.
+                        Box(
+                            modifier = Modifier
+                                .widthIn(max = 840.dp)
+                                .fillMaxHeight()
+                        ) {
+                            // Each tab keeps its own scroll position and text fields
+                            // when the user switches away and back.
+                            saveableStates.SaveableStateProvider(tab.name) {
+                                when (tab) {
+                                    AppTab.DAILY -> DailyScreen(dailyViewModel)
+                                    AppTab.TASKS -> TasksScreen(tasksViewModel)
+                                    AppTab.REPORTS -> ReportsScreen(reportsViewModel, onNotify = notify)
+                                    AppTab.SETTINGS -> SettingsScreen(
+                                        viewModel = settingsViewModel,
+                                        theme = theme,
+                                        biometricEnabled = biometricEnabled,
+                                        onThemeChange = appViewModel::setTheme,
+                                        onBiometricChange = settingsViewModel::setBiometricEnabled,
+                                        onNotify = notify
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
