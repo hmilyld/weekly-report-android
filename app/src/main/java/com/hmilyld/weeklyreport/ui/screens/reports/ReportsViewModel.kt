@@ -34,7 +34,7 @@ data class ReportUiState(
     val offline: Boolean = false,
     val error: String? = null,
     val editing: Boolean = false,
-    val draft: String = ""
+    val draft: String = "",
 ) {
     val dirty: Boolean get() = editing && draft != content
     val periodKey: String
@@ -146,7 +146,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
                                 offline = true,
                                 notGenerated = false,
                                 loading = false,
-                                editing = false
+                                editing = false,
                             )
                         }
                     } else {
@@ -155,7 +155,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
                                 offline = true,
                                 error = error.message,
                                 loading = false,
-                                notGenerated = true
+                                notGenerated = true,
                             )
                         }
                     }
@@ -200,7 +200,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
                         UiMessage.Text(R.string.reports_generated_weekly)
                     } else {
                         UiMessage.Text(R.string.reports_generated_monthly)
-                    }
+                    },
                 )
             } catch (error: ApiException) {
                 if (!error.requiresLogin) {
@@ -271,7 +271,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
                     generatedAt = null,
                     notGenerated = true,
                     loading = false,
-                    editing = false
+                    editing = false,
                 )
             }
         } else {
@@ -282,7 +282,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
                     generatedAt = generatedAt,
                     notGenerated = false,
                     loading = false,
-                    editing = false
+                    editing = false,
                 )
             }
         }

@@ -49,7 +49,7 @@ class MainActivity : FragmentActivity() {
                 AppRoot(
                     container = container,
                     widgetRequest = widgetOpen,
-                    onWidgetRequestConsumed = { widgetOpen.value = null }
+                    onWidgetRequestConsumed = { widgetOpen.value = null },
                 )
             }
         }
@@ -70,7 +70,7 @@ class MainActivity : FragmentActivity() {
             date = date,
             openEditor = intent.getBooleanExtra(EXTRA_OPEN_EDITOR, false),
             tab = tab,
-            id = System.nanoTime()
+            id = System.nanoTime(),
         )
     }
 

@@ -26,19 +26,19 @@ data class LoginUiState(
     val testing: Boolean = false,
     val serverError: String? = null,
     val formError: UiMessage? = null,
-    val testResult: UiMessage? = null
+    val testResult: UiMessage? = null,
 )
 
 class LoginViewModel(
     private val settings: SettingsStore,
     private val session: SessionManager,
-    private val api: ApiClient
+    private val api: ApiClient,
 ) : ViewModel() {
     private val _state = MutableStateFlow(
         LoginUiState(
             serverInput = UrlRules.displayAddress(settings.serverBaseValue()),
-            username = settings.lastUsername.value
-        )
+            username = settings.lastUsername.value,
+        ),
     )
     val state: StateFlow<LoginUiState> = _state.asStateFlow()
 
@@ -50,7 +50,7 @@ class LoginViewModel(
         _state.update {
             it.copy(
                 serverInput = UrlRules.displayAddress(settings.serverBaseValue()),
-                username = if (it.username.isBlank()) settings.lastUsername.value else it.username
+                username = if (it.username.isBlank()) settings.lastUsername.value else it.username,
             )
         }
     }

@@ -17,7 +17,7 @@ object BiometricUi {
         title: String,
         subtitle: String,
         onSuccess: () -> Unit,
-        onFailure: (String) -> Unit
+        onFailure: (String) -> Unit,
     ) {
         val activity = context.findActivity()
         if (activity == null) {
@@ -37,10 +37,10 @@ object BiometricUi {
                     val message = when (errorCode) {
                         BiometricPrompt.ERROR_NEGATIVE_BUTTON,
                         BiometricPrompt.ERROR_USER_CANCELED,
-                        BiometricPrompt.ERROR_CANCELED
+                        BiometricPrompt.ERROR_CANCELED,
                         -> context.getString(R.string.biometric_canceled)
                         BiometricPrompt.ERROR_LOCKOUT,
-                        BiometricPrompt.ERROR_LOCKOUT_PERMANENT
+                        BiometricPrompt.ERROR_LOCKOUT_PERMANENT,
                         -> context.getString(R.string.biometric_locked_out)
                         BiometricPrompt.ERROR_NO_BIOMETRICS ->
                             context.getString(R.string.biometric_not_enrolled)
@@ -48,7 +48,7 @@ object BiometricUi {
                     }
                     onFailure(message)
                 }
-            }
+            },
         )
         val info = BiometricPrompt.PromptInfo.Builder()
             .setTitle(title)

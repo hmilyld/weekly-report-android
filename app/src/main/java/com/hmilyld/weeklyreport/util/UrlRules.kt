@@ -9,6 +9,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 object UrlRules {
     sealed interface Result {
         data class Ok(val baseUrl: String) : Result
+
         data class Error(val message: String) : Result
     }
 

@@ -13,7 +13,7 @@ enum class ApiErrorKind { HTTP, NETWORK, UNAUTHORIZED, DECRYPTION, NOT_CONFIGURE
 class ApiException(
     val status: Int?,
     override val message: String,
-    val kind: ApiErrorKind = ApiErrorKind.HTTP
+    val kind: ApiErrorKind = ApiErrorKind.HTTP,
 ) : Exception(message) {
     val isNotFound: Boolean get() = status == 404
     val isWrongPassword: Boolean get() = status == 402
@@ -82,17 +82,17 @@ object ApiPayloads {
         is SocketTimeoutException -> ApiException(
             status = null,
             message = "连接超时，请检查服务器地址或网络",
-            kind = ApiErrorKind.NETWORK
+            kind = ApiErrorKind.NETWORK,
         )
         is IOException -> ApiException(
             status = null,
             message = "无法连接服务器，请检查网络或服务器地址",
-            kind = ApiErrorKind.NETWORK
+            kind = ApiErrorKind.NETWORK,
         )
         else -> ApiException(
             status = null,
             message = error.message ?: "请求失败",
-            kind = ApiErrorKind.PARSE
+            kind = ApiErrorKind.PARSE,
         )
     }
 }

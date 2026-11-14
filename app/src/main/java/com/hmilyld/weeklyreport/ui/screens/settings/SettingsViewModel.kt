@@ -36,12 +36,12 @@ data class SettingsUiState(
     val passwordError: UiMessage? = null,
     val passwordSuccess: Boolean = false,
     val queue: OutboxCounts = OutboxCounts(0, 0),
-    val notice: UiMessage? = null
+    val notice: UiMessage? = null,
 )
 
 class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     private val _state = MutableStateFlow(
-        SettingsUiState(serverInput = UrlRules.displayAddress(container.settings.serverBaseValue()))
+        SettingsUiState(serverInput = UrlRules.displayAddress(container.settings.serverBaseValue())),
     )
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
 
@@ -72,7 +72,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                             UiMessage.Text(R.string.settings_notice_offline_account)
                         } else {
                             null
-                        }
+                        },
                     )
                 }
             }
@@ -202,7 +202,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                     UiMessage.Text(R.string.settings_biometric_enabled)
                 } else {
                     UiMessage.Text(R.string.settings_biometric_disabled)
-                }
+                },
             )
         }
     }
@@ -214,7 +214,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                     container.appContext,
                     container.db,
                     container.settings,
-                    force = true
+                    force = true,
                 )
             }
             val message = when {
@@ -236,7 +236,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                     UiMessage.Text(R.string.settings_widget_requested)
                 } else {
                     UiMessage.Text(R.string.settings_widget_unsupported)
-                }
+                },
             )
         }
     }

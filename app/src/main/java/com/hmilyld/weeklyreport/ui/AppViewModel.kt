@@ -91,7 +91,7 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
                                 UiMessage.Text(R.string.common_queue_sent, listOf(result.sent))
                             } else {
                                 UiMessage.Text(R.string.app_queue_cleared)
-                            }
+                            },
                         )
 
                     is com.hmilyld.weeklyreport.data.sync.SyncResult.NeedsLogin ->

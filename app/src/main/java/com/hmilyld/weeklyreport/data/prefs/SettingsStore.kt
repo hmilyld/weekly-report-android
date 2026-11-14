@@ -10,7 +10,8 @@ import kotlinx.coroutines.flow.asStateFlow
 enum class ThemeMode(val value: String) {
     SYSTEM("system"),
     LIGHT("light"),
-    DARK("dark");
+    DARK("dark"),
+    ;
 
     companion object {
         fun from(value: String?): ThemeMode = entries.firstOrNull { it.value == value } ?: SYSTEM

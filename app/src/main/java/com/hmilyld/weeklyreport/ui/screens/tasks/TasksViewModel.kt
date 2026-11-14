@@ -29,7 +29,7 @@ data class TasksUiState(
     val refreshing: Boolean = false,
     val offline: Boolean = false,
     val error: String? = null,
-    val loadingMore: Boolean = false
+    val loadingMore: Boolean = false,
 ) {
     val hasMoreCompleted: Boolean get() = completed.size < totalCompleted
 
@@ -40,7 +40,7 @@ data class TasksUiState(
 
 class TasksViewModel(
     private val repo: TaskRepository,
-    changes: Flow<Long>
+    changes: Flow<Long>,
 ) : ViewModel() {
     private val _state = MutableStateFlow(TasksUiState())
     val state: StateFlow<TasksUiState> = _state.asStateFlow()
@@ -75,7 +75,7 @@ class TasksViewModel(
                 _state.update {
                     it.copy(
                         offline = offline,
-                        error = if (offline) null else error.message
+                        error = if (offline) null else error.message,
                     )
                 }
                 if (!offline) _messages.emit(UiMessage.Raw(error.message))
@@ -158,19 +158,19 @@ class TasksViewModel(
             .sortedWith(
                 compareBy<LocalTask> { it.deadline == null }
                     .thenBy { it.deadline.orEmpty() }
-                    .thenByDescending { it.createdAt }
+                    .thenByDescending { it.createdAt },
             )
         val completed = tasks.filter { it.isCompleted }
             .sortedWith(
                 compareByDescending<LocalTask> { it.deadline != null }
                     .thenByDescending { it.deadline.orEmpty() }
-                    .thenByDescending { it.createdAt }
+                    .thenByDescending { it.createdAt },
             )
         _state.update { current ->
             current.copy(
                 active = active,
                 completed = completed.take(current.completedLimit),
-                totalCompleted = maxOf(current.totalCompleted, completed.size)
+                totalCompleted = maxOf(current.totalCompleted, completed.size),
             )
         }
     }

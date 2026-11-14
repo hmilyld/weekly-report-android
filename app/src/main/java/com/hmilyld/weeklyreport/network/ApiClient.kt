@@ -56,8 +56,8 @@ class ApiClient(private val settings: SettingsStore) {
         "auth/change-password",
         json.encodeToString(
             ChangePasswordRequest.serializer(),
-            ChangePasswordRequest(oldPassword, newPassword)
-        )
+            ChangePasswordRequest(oldPassword, newPassword),
+        ),
     )
 
     // ─── Daily ──────────────────────────────────────────
@@ -85,7 +85,7 @@ class ApiClient(private val settings: SettingsStore) {
         content: String?,
         deadline: String?,
         includeDeadline: Boolean,
-        isCompleted: Boolean?
+        isCompleted: Boolean?,
     ): TaskDto = put(
         "tasks/$id",
         buildString {
@@ -104,7 +104,7 @@ class ApiClient(private val settings: SettingsStore) {
                 append(if (deadline == null) "null" else Json.encodeToString(String.serializer(), deadline))
             }
             append("}")
-        }
+        },
     )
 
     suspend fun deleteTask(id: Int) {
@@ -119,7 +119,7 @@ class ApiClient(private val settings: SettingsStore) {
 
     suspend fun updateWeekly(weekStart: String, content: String): WeeklyReportDto = put(
         "weekly/$weekStart",
-        json.encodeToString(ContentUpdateRequest.serializer(), ContentUpdateRequest(content))
+        json.encodeToString(ContentUpdateRequest.serializer(), ContentUpdateRequest(content)),
     )
 
     suspend fun monthly(year: Int, month: Int): MonthlyReportDto = get("monthly/$year/$month")
@@ -128,7 +128,7 @@ class ApiClient(private val settings: SettingsStore) {
 
     suspend fun updateMonthly(year: Int, month: Int, content: String): MonthlyReportDto = put(
         "monthly/$year/$month",
-        json.encodeToString(ContentUpdateRequest.serializer(), ContentUpdateRequest(content))
+        json.encodeToString(ContentUpdateRequest.serializer(), ContentUpdateRequest(content)),
     )
 
     suspend fun health() {
@@ -164,7 +164,7 @@ class ApiClient(private val settings: SettingsStore) {
         path: String,
         body: String? = null,
         notifyUnauthorized: Boolean = true,
-        baseOverride: String? = null
+        baseOverride: String? = null,
     ): String = withContext(Dispatchers.IO) {
         val base = baseOverride ?: settings.serverBaseValue()
         if (base.isBlank()) {
@@ -192,7 +192,7 @@ class ApiClient(private val settings: SettingsStore) {
                     throw ApiException(
                         response.code,
                         "服务器无法解密已保存内容（密钥缓存已丢失），请重新登录以恢复。",
-                        ApiErrorKind.DECRYPTION
+                        ApiErrorKind.DECRYPTION,
                     )
                 }
                 if (!response.isSuccessful) {

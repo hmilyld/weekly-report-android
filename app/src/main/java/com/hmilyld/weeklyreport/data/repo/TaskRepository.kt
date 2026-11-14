@@ -22,7 +22,7 @@ class TaskRepository(
     private val api: ApiClient,
     private val session: SessionManager,
     private val scheduler: SyncScheduler,
-    private val onLocalChange: () -> Unit
+    private val onLocalChange: () -> Unit,
 ) {
     fun localTasks(): List<LocalTask> = db.allLocalTasks().filter { !it.deleted }
 
@@ -48,8 +48,8 @@ class TaskRepository(
                 content = content,
                 deadline = deadline,
                 includeDeadline = true,
-                isCompleted = false
-            )
+                isCompleted = false,
+            ),
         )
         onLocalChange()
         scheduler.requestDrain()
@@ -67,8 +67,8 @@ class TaskRepository(
                 content = task.content,
                 deadline = task.deadline,
                 includeDeadline = previousIncludeDeadline(localId),
-                isCompleted = completed
-            )
+                isCompleted = completed,
+            ),
         )
         onLocalChange()
         scheduler.requestDrain()
@@ -84,8 +84,8 @@ class TaskRepository(
                 content = content,
                 deadline = deadline,
                 includeDeadline = deadlineChanged || previousIncludeDeadline(localId),
-                isCompleted = task.isCompleted
-            )
+                isCompleted = task.isCompleted,
+            ),
         )
         onLocalChange()
         scheduler.requestDrain()
@@ -101,7 +101,7 @@ class TaskRepository(
             enqueue(
                 localId = localId,
                 kind = OutboxKind.TASK_DELETE,
-                payload = SyncTaskPayload(content = task.content)
+                payload = SyncTaskPayload(content = task.content),
             )
             onLocalChange()
             scheduler.requestDrain()
@@ -115,7 +115,7 @@ class TaskRepository(
             kind = kind,
             localId = localId,
             payload = ApiPayloads.json.encodeToString(SyncTaskPayload.serializer(), payload),
-            owner = session.owner()
+            owner = session.owner(),
         )
     }
 
@@ -132,6 +132,6 @@ class TaskRepository(
         deadline = deadline,
         isCompleted = isCompleted,
         updatedAt = updatedAt,
-        createdAt = Dates.parseServerInstant(createdAt)?.toEpochMilli() ?: Instant.now().toEpochMilli()
+        createdAt = Dates.parseServerInstant(createdAt)?.toEpochMilli() ?: Instant.now().toEpochMilli(),
     )
 }

@@ -20,7 +20,7 @@ class SyncScheduler(private val context: Context) {
             .setConstraints(
                 Constraints.Builder()
                     .setRequiredNetworkType(NetworkType.CONNECTED)
-                    .build()
+                    .build(),
             )
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.SECONDS)
             .build()
@@ -29,7 +29,7 @@ class SyncScheduler(private val context: Context) {
             // Append to a running drain instead of dropping a request that
             // arrives while the worker is finishing.
             ExistingWorkPolicy.APPEND_OR_REPLACE,
-            request
+            request,
         )
     }
 

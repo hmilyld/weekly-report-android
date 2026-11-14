@@ -17,7 +17,9 @@ import kotlinx.serialization.SerializationException
 
 sealed interface SyncResult {
     data class Done(val sent: Int) : SyncResult
+
     data class Stopped(val reason: String, val transient: Boolean) : SyncResult
+
     data class NeedsLogin(val reason: String) : SyncResult
 }
 
@@ -30,7 +32,7 @@ class SyncEngine(
     private val db: AppDatabase,
     private val api: ApiClient,
     private val session: SessionManager,
-    private val onChanged: () -> Unit
+    private val onChanged: () -> Unit,
 ) {
     private val mutex = Mutex()
 
@@ -99,7 +101,7 @@ class SyncEngine(
         val decision = ReplayRules.dailyDecision(
             serverContent = server?.content,
             baseline = cached?.serverContent,
-            localContent = item.payload
+            localContent = item.payload,
         )
         return when (decision) {
             ReplayRules.Decision.AlreadySynced -> {
@@ -166,7 +168,7 @@ class SyncEngine(
             content = dto.content,
             deadline = dto.deadline,
             isCompleted = dto.isCompleted,
-            remoteUpdatedAt = dto.updatedAt
+            remoteUpdatedAt = dto.updatedAt,
         )
         return Outcome.Sent
     }
@@ -196,7 +198,7 @@ class SyncEngine(
                 content = payload.content,
                 deadline = payload.deadline,
                 includeDeadline = includeDeadline,
-                isCompleted = payload.isCompleted
+                isCompleted = payload.isCompleted,
             )
         } catch (error: ApiException) {
             if (error.isNotFound) {
@@ -212,7 +214,7 @@ class SyncEngine(
             content = dto.content,
             deadline = dto.deadline,
             isCompleted = dto.isCompleted,
-            remoteUpdatedAt = dto.updatedAt
+            remoteUpdatedAt = dto.updatedAt,
         )
         return Outcome.Sent
     }

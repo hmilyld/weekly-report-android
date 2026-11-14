@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
  */
 sealed interface UiMessage {
     data class Text(@StringRes val id: Int, val args: List<Any> = emptyList()) : UiMessage
+
     data class Raw(val value: String) : UiMessage
 }
 

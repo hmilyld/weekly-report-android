@@ -39,7 +39,7 @@ fun LockScreen(
     biometricAvailable: Boolean,
     onUnlock: () -> Unit,
     onLoginWithPassword: () -> Unit,
-    onNotify: (String) -> Unit
+    onNotify: (String) -> Unit,
 ) {
     LaunchedEffect(Unit) {
         if (biometricAvailable) onUnlock()
@@ -49,29 +49,29 @@ fun LockScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .safeDrawingPadding()
-            .padding(Spacing.xl)
+            .padding(Spacing.xl),
     ) {
         Column(
             modifier = Modifier.align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
                 modifier = Modifier
                     .size(76.dp)
                     .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Lock,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(34.dp)
+                    modifier = Modifier.size(34.dp),
                 )
             }
             Text(
                 text = stringResource(R.string.lock_title),
                 style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(top = Spacing.lg)
+                modifier = Modifier.padding(top = Spacing.lg),
             )
             Text(
                 text = if (username.isBlank()) {
@@ -81,7 +81,7 @@ fun LockScreen(
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = Spacing.xs)
+                modifier = Modifier.padding(top = Spacing.xs),
             )
 
             Button(
@@ -91,7 +91,7 @@ fun LockScreen(
                     .fillMaxWidth()
                     .padding(top = Spacing.xxl)
                     .heightIn(min = 52.dp),
-                shape = RoundedCornerShape(14.dp)
+                shape = RoundedCornerShape(14.dp),
             ) {
                 Icon(Icons.Outlined.Fingerprint, contentDescription = null)
                 Spacer(modifier = Modifier.size(Spacing.sm))
@@ -103,12 +103,12 @@ fun LockScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = Spacing.sm)
+                    modifier = Modifier.padding(top = Spacing.sm),
                 )
             }
             Row(
                 modifier = Modifier.padding(top = Spacing.md),
-                horizontalArrangement = Arrangement.Center
+                horizontalArrangement = Arrangement.Center,
             ) {
                 TextButton(onClick = onLoginWithPassword) {
                     Text(stringResource(R.string.lock_login_with_password))
@@ -122,7 +122,7 @@ fun LockScreen(
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
+                .fillMaxWidth(),
         )
     }
 }

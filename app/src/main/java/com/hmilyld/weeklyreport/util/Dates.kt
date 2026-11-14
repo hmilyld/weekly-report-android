@@ -70,7 +70,7 @@ object Dates {
             local.monthValue,
             local.dayOfMonth,
             local.hour,
-            local.minute
+            local.minute,
         )
     }
 

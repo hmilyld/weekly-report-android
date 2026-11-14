@@ -7,14 +7,16 @@ data class SyncTaskPayload(
     val content: String,
     val deadline: String? = null,
     val includeDeadline: Boolean = false,
-    val isCompleted: Boolean = false
+    val isCompleted: Boolean = false,
 )
 
 /** Pure rule for replaying a locally saved day against the server's current value. */
 object ReplayRules {
     sealed interface Decision {
         data object Send : Decision
+
         data object AlreadySynced : Decision
+
         data object Conflict : Decision
     }
 

@@ -54,7 +54,7 @@ import com.hmilyld.weeklyreport.ui.theme.Spacing
 fun LoginScreen(
     viewModel: LoginViewModel,
     problem: String?,
-    onNotify: (String) -> Unit
+    onNotify: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
     val scroll = rememberScrollState()
@@ -66,7 +66,7 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(MaterialTheme.colorScheme.background),
     ) {
         Column(
             modifier = Modifier
@@ -76,42 +76,42 @@ fun LoginScreen(
                 .safeDrawingPadding()
                 .verticalScroll(scroll)
                 .padding(horizontal = Spacing.xl)
-                .padding(top = Spacing.lg, bottom = Spacing.xxl)
+                .padding(top = Spacing.lg, bottom = Spacing.xxl),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
                         .size(width = 22.dp, height = 4.dp)
-                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)),
                 )
                 Text(
                     text = stringResource(R.string.login_kicker),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = Spacing.sm)
+                    modifier = Modifier.padding(start = Spacing.sm),
                 )
             }
             Text(
                 text = stringResource(R.string.login_title),
                 style = MaterialTheme.typography.displaySmall.copy(
                     fontSize = 30.sp,
-                    lineHeight = 36.sp
+                    lineHeight = 36.sp,
                 ),
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(top = Spacing.lg)
+                modifier = Modifier.padding(top = Spacing.lg),
             )
             Text(
                 text = stringResource(R.string.login_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = Spacing.sm)
+                modifier = Modifier.padding(top = Spacing.sm),
             )
 
             if (problem != null) {
                 Box(modifier = Modifier.padding(top = Spacing.lg)) {
                     Banner(
                         text = problem,
-                        icon = Icons.Outlined.Lock
+                        icon = Icons.Outlined.Lock,
                     )
                 }
             }
@@ -128,7 +128,7 @@ fun LoginScreen(
                             stringResource(R.string.login_server_label_required)
                         } else {
                             stringResource(R.string.common_server_address)
-                        }
+                        },
                     )
                 },
                 placeholder = { Text("https://report.example.com:18001") },
@@ -142,24 +142,24 @@ fun LoginScreen(
                             serverError != null -> serverError
                             testResult != null -> testResult.asText()
                             else -> stringResource(R.string.login_server_hint)
-                        }
+                        },
                     )
                 },
                 shape = RoundedCornerShape(14.dp),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
-                    imeAction = ImeAction.Next
-                )
+                    imeAction = ImeAction.Next,
+                ),
             )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.xs),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.End,
             ) {
                 OutlinedButton(
                     onClick = viewModel::testServer,
-                    enabled = !state.testing && !state.loggingIn
+                    enabled = !state.testing && !state.loggingIn,
                 ) {
                     if (state.testing) {
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
@@ -171,7 +171,7 @@ fun LoginScreen(
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = Spacing.lg),
-                color = MaterialTheme.colorScheme.outlineVariant
+                color = MaterialTheme.colorScheme.outlineVariant,
             )
 
             OutlinedTextField(
@@ -181,7 +181,7 @@ fun LoginScreen(
                 label = { Text(stringResource(R.string.login_username)) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             )
             OutlinedTextField(
                 value = state.password,
@@ -209,15 +209,15 @@ fun LoginScreen(
                                 stringResource(R.string.login_hide_password)
                             } else {
                                 stringResource(R.string.login_show_password)
-                            }
+                            },
                         )
                     }
                 },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
+                    imeAction = ImeAction.Done,
                 ),
-                keyboardActions = KeyboardActions(onDone = { viewModel.login() })
+                keyboardActions = KeyboardActions(onDone = { viewModel.login() }),
             )
 
             val formError = state.formError
@@ -226,7 +226,7 @@ fun LoginScreen(
                     text = formError.asText(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = Spacing.sm)
+                    modifier = Modifier.padding(top = Spacing.sm),
                 )
             }
 
@@ -237,13 +237,13 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .padding(top = Spacing.lg)
                     .heightIn(min = 52.dp),
-                shape = RoundedCornerShape(14.dp)
+                shape = RoundedCornerShape(14.dp),
             ) {
                 if (state.loggingIn) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(18.dp),
                         strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = MaterialTheme.colorScheme.onPrimary,
                     )
                     Spacer(modifier = Modifier.size(Spacing.sm))
                 }
@@ -257,7 +257,7 @@ fun LoginScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = Spacing.lg)
+                    .padding(top = Spacing.lg),
             )
         }
     }

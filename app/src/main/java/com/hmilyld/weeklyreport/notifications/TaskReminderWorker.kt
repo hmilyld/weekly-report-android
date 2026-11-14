@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 
 class TaskReminderWorker(
     appContext: Context,
-    params: androidx.work.WorkerParameters
+    params: androidx.work.WorkerParameters,
 ) : androidx.work.CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result {
         val app = applicationContext as? WeeklyReportApp ?: return Result.success()
@@ -17,7 +17,7 @@ class TaskReminderWorker(
             context = applicationContext,
             db = app.container.db,
             settings = app.container.settings,
-            force = false
+            force = false,
         )
         return Result.success()
     }
@@ -32,7 +32,7 @@ class TaskReminderWorker(
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 UNIQUE_NAME,
                 ExistingPeriodicWorkPolicy.KEEP,
-                request
+                request,
             )
         }
     }

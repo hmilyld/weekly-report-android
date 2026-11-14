@@ -64,7 +64,7 @@ private val LightColors = lightColorScheme(
     inverseSurface = Color(0xFF2E2A24),
     inverseOnSurface = Color(0xFFF5EEE0),
     inversePrimary = Color(0xFFE98570),
-    scrim = Color(0xFF000000)
+    scrim = Color(0xFF000000),
 )
 
 private val DarkColors = darkColorScheme(
@@ -101,7 +101,7 @@ private val DarkColors = darkColorScheme(
     inverseSurface = Color(0xFFF2EADB),
     inverseOnSurface = Color(0xFF322E26),
     inversePrimary = Color(0xFF8E2F22),
-    scrim = Color(0xFF000000)
+    scrim = Color(0xFF000000),
 )
 
 private val AppTypography = Typography(
@@ -110,71 +110,71 @@ private val AppTypography = Typography(
         fontWeight = FontWeight.Bold,
         fontSize = 32.sp,
         lineHeight = 38.sp,
-        letterSpacing = (-0.4).sp
+        letterSpacing = (-0.4).sp,
     ),
     headlineMedium = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Bold,
         fontSize = 26.sp,
-        lineHeight = 32.sp
+        lineHeight = 32.sp,
     ),
     headlineSmall = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 22.sp,
-        lineHeight = 28.sp
+        lineHeight = 28.sp,
     ),
     titleLarge = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 19.sp,
-        lineHeight = 26.sp
+        lineHeight = 26.sp,
     ),
     titleMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 16.sp,
-        lineHeight = 22.sp
+        lineHeight = 22.sp,
     ),
     titleSmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 14.sp,
-        lineHeight = 20.sp
+        lineHeight = 20.sp,
     ),
     bodyLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontSize = 15.5.sp,
-        lineHeight = 24.sp
+        lineHeight = 24.sp,
     ),
     bodyMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontSize = 14.sp,
-        lineHeight = 21.sp
+        lineHeight = 21.sp,
     ),
     bodySmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontSize = 12.5.sp,
-        lineHeight = 18.sp
+        lineHeight = 18.sp,
     ),
     labelLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 14.sp,
-        letterSpacing = 0.1.sp
+        letterSpacing = 0.1.sp,
     ),
     labelMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
-        letterSpacing = 0.2.sp
+        letterSpacing = 0.2.sp,
     ),
     labelSmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
-        letterSpacing = 0.4.sp
-    )
+        letterSpacing = 0.4.sp,
+    ),
 )
 
 object Spacing {
@@ -193,7 +193,7 @@ private val AppShapes = Shapes(
     small = RoundedCornerShape(12.dp),
     medium = RoundedCornerShape(16.dp),
     large = RoundedCornerShape(20.dp),
-    extraLarge = RoundedCornerShape(28.dp)
+    extraLarge = RoundedCornerShape(28.dp),
 )
 
 @Composable
@@ -207,6 +207,6 @@ fun WeeklyReportTheme(mode: ThemeMode, content: @Composable () -> Unit) {
         colorScheme = if (dark) DarkColors else LightColors,
         typography = AppTypography,
         shapes = AppShapes,
-        content = content
+        content = content,
     )
 }

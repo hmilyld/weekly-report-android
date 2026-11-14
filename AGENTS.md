@@ -31,6 +31,7 @@ $env:GRADLE_USER_HOME = 'E:\Androiddev\gradle-home'
 
 - `minSdk 26`、`targetSdk 35`。
 - Lint 必须 0 errors；当前约 50 条 warning（多为版本目录里的依赖升级提示，其次是 `AppDatabase.kt` 的 `SQLiteDatabase.transaction` 建议），新增 error 不允许。
+- 格式化走 `.\gradlew.bat :app:spotlessApply`（Spotless + ktlint 官方风格，与 `gradle.properties` 的 `kotlin.code.style=official` 一致）。多行声明与多行调用保留尾随逗号，不要切回 `android_studio` 风格；Compose 的 PascalCase 函数名已通过 `ktlint_function_naming_ignore_when_annotated_with=Composable` 放行。提交前 `:app:spotlessCheck` 必须通过。
 - Release 使用 R8；新增反射/序列化模型时检查 `app/build/outputs/mapping/release/seeds.txt` 中 `$$serializer` 是否保留。
 - 不提交 `keystore.properties`、`*.jks`、`dist/`、`evidence/`、`local.properties`、`build/`、`.gradle/`、`.kotlin/`。
 
