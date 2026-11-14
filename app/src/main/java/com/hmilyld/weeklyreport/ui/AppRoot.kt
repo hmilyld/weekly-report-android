@@ -128,7 +128,6 @@ fun AppRoot(
         is SessionState.LoggedIn -> {
             LoggedInRoot(
                 container = container,
-                username = current.username,
                 theme = theme,
                 appViewModel = appViewModel,
                 widgetRequest = widgetRequest,
@@ -141,7 +140,6 @@ fun AppRoot(
 @Composable
 private fun LoggedInRoot(
     container: AppContainer,
-    username: String,
     theme: com.hmilyld.weeklyreport.data.prefs.ThemeMode,
     appViewModel: AppViewModel,
     widgetRequest: StateFlow<WidgetOpen?>,
@@ -187,14 +185,16 @@ private fun LoggedInRoot(
         onWidgetRequestConsumed()
     }
 
-    var previousUsername by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(username) {
-        if (previousUsername != null && previousUsername != username) {
+    val activationEpoch by container.session.activationEpoch.collectAsState()
+    LaunchedEffect(activationEpoch) {
+        // Logout/login with the same username keeps the Activity-scoped
+        // ViewModels alive. Refresh on every new activation so a recovered
+        // session never shows the previous session's cache.
+        if (activationEpoch > 0) {
             dailyViewModel.load(showLoading = false)
             tasksViewModel.refresh()
             settingsViewModel.refreshUser()
         }
-        previousUsername = username
     }
 
     LaunchedEffect(Unit) {
@@ -258,6 +258,16 @@ private fun LoggedInRoot(
                     text = "有 ${counts.conflicts} 条离线修改与服务器冲突，需要你确认后才覆盖。",
                     action = {
                         TextButton(onClick = { showConflicts = true }) { Text("处理") }
+                    },
+                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+                )
+
+                counts.failed > 0 -> Banner(
+                    text = "${counts.failed} 条修改发送失败，已保留在本机。",
+                    tone = MaterialTheme.colorScheme.error,
+                    icon = Icons.Outlined.WarningAmber,
+                    action = {
+                        TextButton(onClick = { selectedTab = AppTab.SETTINGS.name }) { Text("处理") }
                     },
                     modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
                 )

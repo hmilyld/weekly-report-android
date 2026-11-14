@@ -2,6 +2,7 @@ package com.hmilyld.weeklyreport
 
 import android.content.Context
 import com.hmilyld.weeklyreport.data.SessionManager
+import com.hmilyld.weeklyreport.data.SessionState
 import com.hmilyld.weeklyreport.data.local.AppDatabase
 import com.hmilyld.weeklyreport.data.prefs.SettingsStore
 import com.hmilyld.weeklyreport.data.repo.DailyRepository
@@ -66,10 +67,19 @@ class AppContainer(context: Context) {
             TaskNotifier.ensureChannel(appContext)
             TaskReminderWorker.schedule(appContext)
             scheduler.requestDrain()
-            if (session.state.value is com.hmilyld.weeklyreport.data.SessionState.LoggedIn) {
-                syncEngine.drain()
-            }
             TaskNotifier.checkAndNotify(appContext, db, settings, force = false)
+        }
+
+        // A locked session cannot send. When login/unlock makes the token
+        // available again, drain immediately instead of waiting for the next
+        // write or a process restart.
+        scope.launch {
+            session.state.collect { state ->
+                if (state is SessionState.LoggedIn) {
+                    scheduler.requestDrain()
+                    syncEngine.drain()
+                }
+            }
         }
     }
 }

@@ -39,6 +39,18 @@ class SessionManager(
     private val _problem = MutableStateFlow(settings.lastLoginProblem().ifBlank { null })
     val problem: StateFlow<String?> = _problem.asStateFlow()
 
+    /**
+     * Increments whenever a session becomes usable again (login or biometric
+     * unlock). UI refreshes and the outbox drain key off this instead of the
+     * username, which is equal across a logout/login cycle.
+     */
+    private val _activationEpoch = MutableStateFlow(0L)
+    val activationEpoch: StateFlow<Long> = _activationEpoch.asStateFlow()
+
+    private fun activate() {
+        _activationEpoch.value += 1
+    }
+
     init {
         api.tokenProvider = { tokenOrNull() }
         api.problemListener = { onAuthProblem(it) }
@@ -61,6 +73,7 @@ class SessionManager(
         settings.setLastUsername(cachedUsername)
         clearProblem()
         _state.value = SessionState.LoggedIn(cachedUsername)
+        activate()
     }
 
     suspend fun logout() {
@@ -74,6 +87,7 @@ class SessionManager(
     fun unlock() {
         if (tokenCache != null) {
             _state.value = SessionState.LoggedIn(cachedUsername)
+            activate()
         } else {
             _state.value = SessionState.LoggedOut
         }

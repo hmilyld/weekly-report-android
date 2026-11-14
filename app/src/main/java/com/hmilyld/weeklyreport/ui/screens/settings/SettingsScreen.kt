@@ -379,14 +379,15 @@ fun SettingsScreen(
                 ) {
                     Text("待发送与冲突", style = MaterialTheme.typography.titleSmall)
                     Text(
-                        "待发送 ${state.queue.pending} 条 · 冲突 ${state.queue.conflicts} 条",
+                        "待发送 ${state.queue.pending} 条 · 冲突 ${state.queue.conflicts} 条" +
+                            if (state.queue.failed > 0) " · 失败 ${state.queue.failed} 条" else "",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 OutlinedButton(
                     onClick = viewModel::retryQueue,
-                    enabled = state.queue.pending > 0,
+                    enabled = state.queue.pending > 0 || state.queue.failed > 0,
                 ) {
                     Icon(Icons.Outlined.Sync, contentDescription = null, modifier = Modifier.size(16.dp))
                     Text("立即重试", modifier = Modifier.padding(start = Spacing.xs))
@@ -395,6 +396,14 @@ fun SettingsScreen(
             if (state.queue.conflicts > 0) {
                 Text(
                     text = "有冲突的日报不会自动覆盖服务器；请在页面顶部的提示里逐条选择。",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = Spacing.xs),
+                )
+            }
+            if (state.queue.failed > 0) {
+                Text(
+                    text = "发送失败的修改仍保存在本机。检查内容后点「立即重试」，或重新编辑该项。",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(top = Spacing.xs),

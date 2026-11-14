@@ -79,7 +79,11 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     fun retryQueue() {
         container.syncEngine.let { engine ->
             viewModelScope.launch {
-                when (val result = withContext(Dispatchers.IO) { engine.drain() }) {
+                val result = withContext(Dispatchers.IO) {
+                    container.db.requeueFailed(container.session.owner())
+                    engine.drain()
+                }
+                when (result) {
                     is com.hmilyld.weeklyreport.data.sync.SyncResult.Done ->
                         _messages.emit(if (result.sent > 0) "已发送 ${result.sent} 条离线修改" else "队列已清空")
                     is com.hmilyld.weeklyreport.data.sync.SyncResult.NeedsLogin ->

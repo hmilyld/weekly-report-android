@@ -164,7 +164,10 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
 
     fun retryQueue() {
         viewModelScope.launch {
-            val result = withContext(Dispatchers.IO) { container.syncEngine.drain() }
+            val result = withContext(Dispatchers.IO) {
+                container.db.requeueFailed(container.session.owner())
+                container.syncEngine.drain()
+            }
             val message = when (result) {
                 is SyncResult.Done ->
                     if (result.sent > 0) "已发送 ${result.sent} 条离线修改" else "没有待发送的修改"

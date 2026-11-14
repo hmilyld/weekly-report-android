@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
 enum class OutboxKind { DAILY_SAVE, DAILY_DELETE, TASK_CREATE, TASK_UPDATE, TASK_DELETE }
-enum class OutboxState { PENDING, CONFLICT }
+enum class OutboxState { PENDING, CONFLICT, FAILED }
 
 data class CachedDay(
     val date: String,
@@ -51,7 +51,7 @@ data class ReportCacheEntry(
     val generatedAt: String?,
 )
 
-data class OutboxCounts(val pending: Int, val conflicts: Int)
+data class OutboxCounts(val pending: Int, val conflicts: Int, val failed: Int = 0)
 
 /**
  * Plain SQLite storage for offline drafts, the task cache and the send queue.
@@ -285,19 +285,40 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
         }
     }
 
-    fun markDailyAlreadySynced(date: String, serverContent: String, serverUpdatedAt: String?) = synchronized(lock) {
-        writable.update(
-            "daily_cache",
-            ContentValues().apply {
+    fun markDailyAlreadySynced(
+        date: String,
+        serverContent: String,
+        serverUpdatedAt: String?,
+    ) = synchronized(lock) {
+        val existing = dailyByDateUnlocked(date)
+        if (existing == null) {
+            writable.insertOrThrow(
+                "daily_cache",
+                null,
+                ContentValues().apply {
+                    put("date", date)
+                    put("content", serverContent)
+                    put("server_content", serverContent)
+                    put("server_updated_at", serverUpdatedAt)
+                    put("pending", 0)
+                    put("deleted", 0)
+                },
+            )
+            return@synchronized
+        }
+        // The replay found the server already holding the queued payload. If
+        // the cache has since moved to a different value, a newer edit exists;
+        // only advance the server baseline, never overwrite that edit.
+        val values = ContentValues().apply {
+            put("server_content", serverContent)
+            put("server_updated_at", serverUpdatedAt)
+            if (existing.content == serverContent) {
                 put("content", serverContent)
-                put("server_content", serverContent)
-                put("server_updated_at", serverUpdatedAt)
                 put("pending", 0)
                 put("deleted", 0)
-            },
-            "date = ?",
-            arrayOf(date),
-        )
+            }
+        }
+        writable.update("daily_cache", values, "date = ?", arrayOf(date))
     }
 
     fun markDailyRemoved(date: String) = synchronized(lock) {
@@ -533,8 +554,8 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
         try {
             writable.delete(
                 "outbox",
-                "entity_key = ? AND kind IN (?, ?)",
-                arrayOf(date, OutboxKind.DAILY_SAVE.name, OutboxKind.DAILY_DELETE.name),
+                "entity_key = ? AND (kind IN (?, ?) OR state = ?)",
+                arrayOf(date, OutboxKind.DAILY_SAVE.name, OutboxKind.DAILY_DELETE.name, OutboxState.FAILED.name),
             )
             val id = writable.insertOrThrow(
                 "outbox",
@@ -595,8 +616,8 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                     } else {
                         writable.delete(
                             "outbox",
-                            "entity_key = ? AND kind IN (?, ?)",
-                            arrayOf(localId, OutboxKind.TASK_UPDATE.name, OutboxKind.TASK_DELETE.name),
+                            "entity_key = ? AND (kind IN (?, ?) OR state = ?)",
+                            arrayOf(localId, OutboxKind.TASK_UPDATE.name, OutboxKind.TASK_DELETE.name, OutboxState.FAILED.name),
                         )
                         id = insertTaskOutbox(kind, localId, payload, owner)
                     }
@@ -656,6 +677,22 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
         )
     }
 
+    /** A permanent 4xx failed this item; park it so it does not block the rest. */
+    fun markOutboxFailed(id: Long, message: String) = synchronized(lock) {
+        writable.execSQL(
+            "UPDATE outbox SET state = ?, attempts = attempts + 1, last_error = ? WHERE id = ?",
+            arrayOf(OutboxState.FAILED.name, message, id.toString()),
+        )
+    }
+
+    /** Explicit user retry: put parked items back into the pending queue. */
+    fun requeueFailed(owner: String) = synchronized(lock) {
+        writable.execSQL(
+            "UPDATE outbox SET state = ?, attempts = 0, last_error = NULL WHERE state = ? AND owner = ?",
+            arrayOf(OutboxState.PENDING.name, OutboxState.FAILED.name, owner),
+        )
+    }
+
     fun markTaskOutboxKindUpdate(id: Long) = synchronized(lock) {
         writable.update(
             "outbox",
@@ -681,6 +718,7 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
     fun outboxCounts(owner: String): OutboxCounts = synchronized(lock) {
         var pending = 0
         var conflicts = 0
+        var failed = 0
         readable.rawQuery(
             "SELECT state, COUNT(*) FROM outbox WHERE owner = ? GROUP BY state",
             arrayOf(owner),
@@ -689,10 +727,11 @@ class AppDatabase(context: Context) : SQLiteOpenHelper(context, NAME, null, VERS
                 when (cursor.getString(0)) {
                     OutboxState.PENDING.name -> pending = cursor.getInt(1)
                     OutboxState.CONFLICT.name -> conflicts = cursor.getInt(1)
+                    OutboxState.FAILED.name -> failed = cursor.getInt(1)
                 }
             }
         }
-        OutboxCounts(pending, conflicts)
+        OutboxCounts(pending, conflicts, failed)
     }
 
     fun conflicts(owner: String): List<OutboxItem> = synchronized(lock) {

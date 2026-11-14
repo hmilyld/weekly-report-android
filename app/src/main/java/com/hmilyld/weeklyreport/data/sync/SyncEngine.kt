@@ -6,7 +6,6 @@ import com.hmilyld.weeklyreport.data.local.AppDatabase
 import com.hmilyld.weeklyreport.data.local.OutboxItem
 import com.hmilyld.weeklyreport.data.local.OutboxKind
 import com.hmilyld.weeklyreport.network.ApiClient
-import com.hmilyld.weeklyreport.network.ApiErrorKind
 import com.hmilyld.weeklyreport.network.ApiException
 import com.hmilyld.weeklyreport.network.ApiPayloads
 import com.hmilyld.weeklyreport.util.Dates
@@ -60,17 +59,24 @@ class SyncEngine(
                     }
                 } catch (error: ApiException) {
                     Log.w(TAG, "failed ${item.kind} key=${item.entityKey}: ${error.status} ${error.message}")
-                    if (error.requiresLogin) {
-                        db.markOutboxError(item.id, error.message)
-                        if (changed) onChanged()
-                        return@withLock SyncResult.NeedsLogin(error.message)
+                    when (SyncErrorPolicy.action(error)) {
+                        SyncErrorPolicy.Action.NEEDS_LOGIN -> {
+                            db.markOutboxError(item.id, error.message)
+                            if (changed) onChanged()
+                            return@withLock SyncResult.NeedsLogin(error.message)
+                        }
+                        SyncErrorPolicy.Action.RETRY_LATER -> {
+                            db.markOutboxError(item.id, error.message)
+                            if (changed) onChanged()
+                            return@withLock SyncResult.Stopped(error.message, transient = true)
+                        }
+                        SyncErrorPolicy.Action.FAIL_ITEM -> {
+                            // Park this row and continue; later writes must not
+                            // be blocked by one permanently rejected item.
+                            db.markOutboxFailed(item.id, error.message)
+                            changed = true
+                        }
                     }
-                    db.markOutboxError(item.id, error.message)
-                    if (changed) onChanged()
-                    return@withLock SyncResult.Stopped(
-                        error.message,
-                        transient = error.kind == ApiErrorKind.NETWORK || (error.status ?: 0) >= 500,
-                    )
                 }
             }
             if (changed) onChanged()
@@ -228,8 +234,10 @@ class SyncEngine(
     private fun decodePayload(item: OutboxItem): SyncTaskPayload? = try {
         ApiPayloads.json.decodeFromString(SyncTaskPayload.serializer(), item.payload)
     } catch (error: SerializationException) {
+        // A payload that cannot be decoded will never decode; park it instead
+        // of retrying (and blocking the queue behind) the same row forever.
         Log.e(TAG, "bad payload for ${item.kind} ${item.entityKey}", error)
-        db.markOutboxError(item.id, "本地队列数据损坏")
+        db.markOutboxFailed(item.id, "本地队列数据损坏")
         null
     }
 
