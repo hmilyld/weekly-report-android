@@ -116,6 +116,15 @@ AppDatabase (SQLite) ──► outbox ──► SyncEngine ──► ApiClient
 - 只有“单个换行插入”且 `TextFieldValue.composition == null` 时才可改写文本；组合输入期间必须原样接受。
 - 这条规则在 `util/ListInput.kt` 与 `DailyScreen` 的 `handleValueChange` 中，修改时补单测。
 
+### 4.7 永久失败与 outbox 阻塞
+
+- 重放时只有认证错误（401 / `_decryption_failed`）与可重试错误（网络、5xx、429）会停止整条队列。
+- 其余 4xx（典型场景：离线建了截止日期为过去的待办，第二天联网时后端返回 400/422）以及本地 payload 无法解码，只把该条置为 `OutboxState.FAILED`，然后继续处理后续项；否则一条坏数据会永久堵住所有离线写入。
+- 错误分类集中在 `data/sync/SyncErrorPolicy.kt`，改动分类时同步更新 `SyncErrorPolicyTest`。
+- `FAILED` 项保留在本机，`outboxCounts` 单独计数，`AppRoot` 横幅提示，设置页可看到失败条数；`requeueFailed(owner)` 把它们放回 `PENDING` 之后才会再次发送。
+- 同一实体再次保存/编辑会替换该实体上残留的 `FAILED` 行，等于用户显式重试。
+- 不要改成“永久失败就删除该条”：删除等于静默丢用户数据。
+
 ## 5. 后端契约
 
 Base URL 由用户填写，自动补 `/api/v1/`。主要端点：
