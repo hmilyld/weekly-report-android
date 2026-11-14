@@ -62,8 +62,14 @@ class ListInputTest {
     fun `composition input must not be transformed`() {
         val old = "1. 中文"
         val next = "$old\n"
-        assertEquals(null, ListInput.continuationForNewline(old, old.length, next, composing = true))
-        assertEquals("1. 中文\n2. ", ListInput.continuationForNewline(old, old.length, next, composing = false)?.value)
+        assertEquals(
+            null,
+            ListInput.continuationForNewline(old, old.length, next, composing = true),
+        )
+        assertEquals(
+            "1. 中文\n2. ",
+            ListInput.continuationForNewline(old, old.length, next, composing = false)?.value,
+        )
     }
 
     @Test

@@ -11,9 +11,13 @@ import kotlinx.coroutines.flow.asStateFlow
 sealed interface SessionState {
     data object LoggedOut : SessionState
 
-    data class Locked(val username: String) : SessionState
+    data class Locked(
+        val username: String,
+    ) : SessionState
 
-    data class LoggedIn(val username: String) : SessionState
+    data class LoggedIn(
+        val username: String,
+    ) : SessionState
 }
 
 /**
@@ -61,13 +65,17 @@ class SessionManager(
     fun tokenOrNull(): String? = if (_state.value is SessionState.LoggedIn) tokenCache else null
 
     /** Outbox rows are owned by the account that wrote them. */
-    fun owner(): String = when (val current = _state.value) {
-        is SessionState.LoggedIn -> current.username
-        is SessionState.Locked -> current.username
-        SessionState.LoggedOut -> ""
-    }
+    fun owner(): String =
+        when (val current = _state.value) {
+            is SessionState.LoggedIn -> current.username
+            is SessionState.Locked -> current.username
+            SessionState.LoggedOut -> ""
+        }
 
-    suspend fun login(username: String, password: String) {
+    suspend fun login(
+        username: String,
+        password: String,
+    ) {
         val response = api.login(username.trim(), password)
         tokenCache = response.accessToken
         tokenStore.saveToken(response.accessToken)
@@ -101,7 +109,10 @@ class SessionManager(
         }
     }
 
-    suspend fun changePassword(oldPassword: String, newPassword: String) {
+    suspend fun changePassword(
+        oldPassword: String,
+        newPassword: String,
+    ) {
         val response = api.changePassword(oldPassword, newPassword)
         tokenCache = response.accessToken
         tokenStore.saveToken(response.accessToken)

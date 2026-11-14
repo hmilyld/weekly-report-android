@@ -162,7 +162,10 @@ fun LoginScreen(
                     enabled = !state.testing && !state.loggingIn,
                 ) {
                     if (state.testing) {
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                        )
                         Spacer(modifier = Modifier.size(Spacing.sm))
                     }
                     Text(stringResource(R.string.common_test_connection))

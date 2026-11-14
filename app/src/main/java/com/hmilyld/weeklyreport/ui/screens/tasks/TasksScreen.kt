@@ -108,7 +108,10 @@ fun TasksScreen(viewModel: TasksViewModel) {
                 trailing = {
                     IconButton(onClick = viewModel::refresh, enabled = !state.refreshing) {
                         if (state.refreshing) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                            )
                         } else {
                             Icon(
                                 Icons.Outlined.Refresh,
@@ -171,7 +174,10 @@ fun TasksScreen(viewModel: TasksViewModel) {
                     .padding(top = Spacing.md, bottom = Spacing.xs),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(stringResource(R.string.tasks_active_section), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.tasks_active_section),
+                    style = MaterialTheme.typography.titleMedium,
+                )
                 Text(
                     text = " ${state.active.size}",
                     style = MaterialTheme.typography.labelSmall,
@@ -225,7 +231,10 @@ fun TasksScreen(viewModel: TasksViewModel) {
                 color = MaterialTheme.colorScheme.outlineVariant,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.tasks_completed_section), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.tasks_completed_section),
+                    style = MaterialTheme.typography.titleMedium,
+                )
                 Text(
                     text = " ${state.totalCompleted}",
                     style = MaterialTheme.typography.labelSmall,
@@ -264,7 +273,10 @@ fun TasksScreen(viewModel: TasksViewModel) {
                             enabled = !state.loadingMore,
                         ) {
                             if (state.loadingMore) {
-                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                )
                                 Spacer(modifier = Modifier.size(Spacing.sm))
                             }
                             Text(
@@ -336,7 +348,11 @@ private fun TaskComposer(onAdd: (String, LocalDate?) -> Unit) {
                     enabled = content.isNotBlank(),
                     modifier = Modifier.padding(start = Spacing.sm),
                 ) {
-                    Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(
+                        Icons.Outlined.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
                     Text(
                         stringResource(R.string.tasks_add),
                         modifier = Modifier.padding(start = Spacing.xs),
@@ -358,7 +374,9 @@ private fun TaskRow(
     // the composer above does; the deadline itself is stored as ISO text.
     var editing by rememberSaveable(task.localId) { mutableStateOf(false) }
     var content by rememberSaveable(task.localId, task.content) { mutableStateOf(task.content) }
-    var deadlineIso by rememberSaveable(task.localId, task.deadline) { mutableStateOf(task.deadline) }
+    var deadlineIso by rememberSaveable(task.localId, task.deadline) {
+        mutableStateOf(task.deadline)
+    }
     var deadlineChanged by rememberSaveable(task.localId) { mutableStateOf(false) }
     val deadline = Dates.parseIso(deadlineIso)
 
@@ -459,7 +477,10 @@ private fun CompletedTaskRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f), MaterialTheme.shapes.medium)
+            .background(
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                MaterialTheme.shapes.medium,
+            )
             .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -502,7 +523,8 @@ private fun DeadlineBadge(rawDeadline: String?) {
         DeadlineState.URGENT ->
             context.getString(R.string.tasks_deadline_urgent, dateLabel(context, deadline)) to
                 MaterialTheme.colorScheme.tertiary
-        DeadlineState.LATER -> dateLabel(context, deadline) to MaterialTheme.colorScheme.onSurfaceVariant
+        DeadlineState.LATER -> dateLabel(context, deadline) to
+            MaterialTheme.colorScheme.onSurfaceVariant
         DeadlineState.NONE -> return
     }
     Row(
@@ -524,7 +546,10 @@ private fun DeadlineBadge(rawDeadline: String?) {
     }
 }
 
-private fun dateLabel(context: Context, date: LocalDate): String = context.getString(R.string.tasks_deadline_date, date.monthValue, date.dayOfMonth)
+private fun dateLabel(
+    context: Context,
+    date: LocalDate,
+): String = context.getString(R.string.tasks_deadline_date, date.monthValue, date.dayOfMonth)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -540,7 +565,11 @@ private fun DeadlineField(
             onClick = { showPicker = true },
             contentPadding = PaddingValues(horizontal = Spacing.md),
         ) {
-            Icon(Icons.Outlined.CalendarMonth, contentDescription = null, modifier = Modifier.size(16.dp))
+            Icon(
+                Icons.Outlined.CalendarMonth,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+            )
             Text(
                 text = date?.let { dateLabel(context, it) }
                     ?: stringResource(R.string.tasks_deadline_set),
@@ -562,9 +591,12 @@ private fun DeadlineField(
     if (showPicker) {
         val todayUtc = LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
         val pickerState = rememberDatePickerState(
-            initialSelectedDateMillis = date?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli(),
+            initialSelectedDateMillis = date?.atStartOfDay(
+                ZoneOffset.UTC,
+            )?.toInstant()?.toEpochMilli(),
             selectableDates = object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis >= todayUtc
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean =
+                    utcTimeMillis >= todayUtc
 
                 override fun isSelectableYear(year: Int): Boolean = year >= LocalDate.now().year
             },

@@ -8,12 +8,19 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
  */
 object UrlRules {
     sealed interface Result {
-        data class Ok(val baseUrl: String) : Result
+        data class Ok(
+            val baseUrl: String,
+        ) : Result
 
-        data class Error(val message: String) : Result
+        data class Error(
+            val message: String,
+        ) : Result
     }
 
-    fun validateAndNormalize(raw: String?, allowCleartext: Boolean): Result {
+    fun validateAndNormalize(
+        raw: String?,
+        allowCleartext: Boolean,
+    ): Result {
         val trimmed = raw?.trim().orEmpty()
         if (trimmed.isEmpty()) {
             return Result.Error("请先填写服务器地址")
@@ -49,5 +56,6 @@ object UrlRules {
     }
 
     /** The stored server address without the /api/v1 suffix, for display. */
-    fun displayAddress(baseUrl: String?): String = baseUrl.orEmpty().trimEnd('/').removeSuffix("/api/v1")
+    fun displayAddress(baseUrl: String?): String =
+        baseUrl.orEmpty().trimEnd('/').removeSuffix("/api/v1")
 }

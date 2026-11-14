@@ -19,7 +19,11 @@ import com.hmilyld.weeklyreport.util.ListInput
  * page cannot do.
  */
 class TodayWidgetProvider : AppWidgetProvider() {
-    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+    override fun onUpdate(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray,
+    ) {
         for (id in appWidgetIds) {
             appWidgetManager.updateAppWidget(id, buildViews(context))
         }
@@ -28,7 +32,9 @@ class TodayWidgetProvider : AppWidgetProvider() {
     companion object {
         fun refresh(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
-            val ids = manager.getAppWidgetIds(ComponentName(context, TodayWidgetProvider::class.java))
+            val ids = manager.getAppWidgetIds(
+                ComponentName(context, TodayWidgetProvider::class.java),
+            )
             if (ids.isEmpty()) return
             val views = buildViews(context)
             ids.forEach { manager.updateAppWidget(it, views) }

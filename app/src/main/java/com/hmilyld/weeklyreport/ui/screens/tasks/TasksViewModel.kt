@@ -64,7 +64,11 @@ class TasksViewModel(
                 repo.refresh()
                 repo.loadCompletedPage(0, TasksUiState.PAGE_SIZE)
                 _state.update {
-                    it.copy(offline = false, error = null, totalCompleted = maxOf(it.totalCompleted, it.completed.size))
+                    it.copy(
+                        offline = false,
+                        error = null,
+                        totalCompleted = maxOf(it.totalCompleted, it.completed.size),
+                    )
                 }
             } catch (error: ApiException) {
                 if (error.requiresLogin) {
@@ -93,7 +97,9 @@ class TasksViewModel(
             _state.update { it.copy(loadingMore = true) }
             try {
                 repo.loadCompletedPage(current.completed.size, TasksUiState.PAGE_SIZE)
-                _state.update { it.copy(completedLimit = it.completedLimit + TasksUiState.PAGE_SIZE) }
+                _state.update {
+                    it.copy(completedLimit = it.completedLimit + TasksUiState.PAGE_SIZE)
+                }
                 reloadLocal()
             } catch (error: ApiException) {
                 _messages.emit(UiMessage.Raw(error.message))
@@ -103,14 +109,21 @@ class TasksViewModel(
         }
     }
 
-    fun create(content: String, deadline: LocalDate?) {
+    fun create(
+        content: String,
+        deadline: LocalDate?,
+    ) {
         val trimmed = content.trim()
         if (trimmed.isEmpty()) {
-            viewModelScope.launch { _messages.emit(UiMessage.Text(R.string.tasks_error_empty_content)) }
+            viewModelScope.launch {
+                _messages.emit(UiMessage.Text(R.string.tasks_error_empty_content))
+            }
             return
         }
         if (deadline != null && deadline.isBefore(LocalDate.now())) {
-            viewModelScope.launch { _messages.emit(UiMessage.Text(R.string.tasks_error_deadline_past)) }
+            viewModelScope.launch {
+                _messages.emit(UiMessage.Text(R.string.tasks_error_deadline_past))
+            }
             return
         }
         viewModelScope.launch {
@@ -127,14 +140,23 @@ class TasksViewModel(
         }
     }
 
-    fun edit(localId: String, content: String, deadline: LocalDate?, deadlineChanged: Boolean) {
+    fun edit(
+        localId: String,
+        content: String,
+        deadline: LocalDate?,
+        deadlineChanged: Boolean,
+    ) {
         val trimmed = content.trim()
         if (trimmed.isEmpty()) {
-            viewModelScope.launch { _messages.emit(UiMessage.Text(R.string.tasks_error_empty_content_edit)) }
+            viewModelScope.launch {
+                _messages.emit(UiMessage.Text(R.string.tasks_error_empty_content_edit))
+            }
             return
         }
         if (deadlineChanged && deadline != null && deadline.isBefore(LocalDate.now())) {
-            viewModelScope.launch { _messages.emit(UiMessage.Text(R.string.tasks_error_deadline_past)) }
+            viewModelScope.launch {
+                _messages.emit(UiMessage.Text(R.string.tasks_error_deadline_past))
+            }
             return
         }
         viewModelScope.launch {

@@ -28,7 +28,9 @@ import kotlinx.coroutines.launch
  * Single manual dependency container. Small enough that DI frameworks would add
  * more build risk than they remove.
  */
-class AppContainer(context: Context) {
+class AppContainer(
+    context: Context,
+) {
     val appContext: Context = context.applicationContext
 
     val settings = SettingsStore(appContext)

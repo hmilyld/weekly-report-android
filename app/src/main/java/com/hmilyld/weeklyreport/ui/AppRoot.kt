@@ -91,7 +91,9 @@ data class WidgetOpen(
     val id: Long,
 )
 
-private enum class AppTab(@StringRes val labelRes: Int) {
+private enum class AppTab(
+    @StringRes val labelRes: Int,
+) {
     DAILY(R.string.app_tab_daily),
     TASKS(R.string.app_tab_tasks),
     REPORTS(R.string.app_tab_reports),
@@ -100,21 +102,22 @@ private enum class AppTab(@StringRes val labelRes: Int) {
 
 // Material 3 navigation bars show the filled icon for the current tab and the
 // outlined one elsewhere; mixing styles per screen is what makes them look off.
-private fun AppTab.icon(selected: Boolean): ImageVector = if (selected) {
-    when (this) {
-        AppTab.DAILY -> Icons.Filled.EditNote
-        AppTab.TASKS -> Icons.Filled.Checklist
-        AppTab.REPORTS -> Icons.AutoMirrored.Filled.Article
-        AppTab.SETTINGS -> Icons.Filled.Settings
+private fun AppTab.icon(selected: Boolean): ImageVector =
+    if (selected) {
+        when (this) {
+            AppTab.DAILY -> Icons.Filled.EditNote
+            AppTab.TASKS -> Icons.Filled.Checklist
+            AppTab.REPORTS -> Icons.AutoMirrored.Filled.Article
+            AppTab.SETTINGS -> Icons.Filled.Settings
+        }
+    } else {
+        when (this) {
+            AppTab.DAILY -> Icons.Outlined.EditNote
+            AppTab.TASKS -> Icons.Outlined.Checklist
+            AppTab.REPORTS -> Icons.AutoMirrored.Outlined.Article
+            AppTab.SETTINGS -> Icons.Outlined.Settings
+        }
     }
-} else {
-    when (this) {
-        AppTab.DAILY -> Icons.Outlined.EditNote
-        AppTab.TASKS -> Icons.Outlined.Checklist
-        AppTab.REPORTS -> Icons.AutoMirrored.Outlined.Article
-        AppTab.SETTINGS -> Icons.Outlined.Settings
-    }
-}
 
 @Composable
 fun AppRoot(
@@ -122,7 +125,8 @@ fun AppRoot(
     widgetRequest: StateFlow<WidgetOpen?>,
     onWidgetRequestConsumed: () -> Unit,
 ) {
-    val appViewModel: AppViewModel = viewModel(factory = SimpleVmFactory { AppViewModel(container) })
+    val appViewModel: AppViewModel =
+        viewModel(factory = SimpleVmFactory { AppViewModel(container) })
     val session by appViewModel.session.collectAsState()
     val problem by appViewModel.problem.collectAsState()
     val theme by appViewModel.theme.collectAsState()
@@ -130,7 +134,9 @@ fun AppRoot(
     when (val current = session) {
         is SessionState.LoggedOut -> {
             val loginViewModel: LoginViewModel = viewModel(
-                factory = SimpleVmFactory { LoginViewModel(container.settings, container.session, container.api) },
+                factory = SimpleVmFactory {
+                    LoginViewModel(container.settings, container.session, container.api)
+                },
             )
             LoginScreen(
                 viewModel = loginViewModel,
@@ -181,10 +187,14 @@ private fun LoggedInRoot(
     onWidgetRequestConsumed: () -> Unit,
 ) {
     val dailyViewModel: DailyViewModel = viewModel(
-        factory = SimpleVmFactory { DailyViewModel(container.dailyRepository, container.dataVersion) },
+        factory = SimpleVmFactory {
+            DailyViewModel(container.dailyRepository, container.dataVersion)
+        },
     )
     val tasksViewModel: TasksViewModel = viewModel(
-        factory = SimpleVmFactory { TasksViewModel(container.taskRepository, container.dataVersion) },
+        factory = SimpleVmFactory {
+            TasksViewModel(container.taskRepository, container.dataVersion)
+        },
     )
     val reportsViewModel: ReportsViewModel = viewModel(
         factory = SimpleVmFactory { ReportsViewModel(container.reportRepository) },
@@ -242,7 +252,10 @@ private fun LoggedInRoot(
             settingsViewModel.messages,
             appViewModel.messages,
         ).collect { message ->
-            snackbarHostState.showSnackbar(message.resolve(snackbarContext), withDismissAction = true)
+            snackbarHostState.showSnackbar(
+                message.resolve(snackbarContext),
+                withDismissAction = true,
+            )
         }
     }
 
@@ -321,13 +334,19 @@ private fun LoggedInRoot(
                 ) {
                     when {
                         counts.conflicts > 0 -> Banner(
-                            text = stringResource(R.string.app_banner_conflict_count, counts.conflicts),
+                            text = stringResource(
+                                R.string.app_banner_conflict_count,
+                                counts.conflicts,
+                            ),
                             action = {
                                 TextButton(onClick = { showConflicts = true }) {
                                     Text(stringResource(R.string.app_banner_action))
                                 }
                             },
-                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+                            modifier = Modifier.padding(
+                                horizontal = Spacing.lg,
+                                vertical = Spacing.xs,
+                            ),
                         )
 
                         counts.failed > 0 -> Banner(
@@ -339,11 +358,17 @@ private fun LoggedInRoot(
                                     Text(stringResource(R.string.app_banner_action))
                                 }
                             },
-                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+                            modifier = Modifier.padding(
+                                horizontal = Spacing.lg,
+                                vertical = Spacing.xs,
+                            ),
                         )
 
                         counts.pending > 0 -> Banner(
-                            text = stringResource(R.string.app_banner_pending_count, counts.pending),
+                            text = stringResource(
+                                R.string.app_banner_pending_count,
+                                counts.pending,
+                            ),
                             tone = MaterialTheme.colorScheme.secondary,
                             icon = Icons.Outlined.Sync,
                             action = {
@@ -351,7 +376,10 @@ private fun LoggedInRoot(
                                     Text(stringResource(R.string.common_retry))
                                 }
                             },
-                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+                            modifier = Modifier.padding(
+                                horizontal = Spacing.lg,
+                                vertical = Spacing.xs,
+                            ),
                         )
                     }
 
@@ -374,7 +402,10 @@ private fun LoggedInRoot(
                                 when (tab) {
                                     AppTab.DAILY -> DailyScreen(dailyViewModel)
                                     AppTab.TASKS -> TasksScreen(tasksViewModel)
-                                    AppTab.REPORTS -> ReportsScreen(reportsViewModel, onNotify = notify)
+                                    AppTab.REPORTS -> ReportsScreen(
+                                        reportsViewModel,
+                                        onNotify = notify,
+                                    )
                                     AppTab.SETTINGS -> SettingsScreen(
                                         viewModel = settingsViewModel,
                                         theme = theme,
@@ -433,7 +464,9 @@ private fun ConflictDialog(
             )
         },
         text = {
-            Column(modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
+            Column(
+                modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()),
+            ) {
                 Text(
                     text = stringResource(R.string.app_conflict_body, total),
                     style = MaterialTheme.typography.bodySmall,
@@ -470,7 +503,9 @@ private fun ConflictDialog(
                 TextButton(onClick = onKeepServer) {
                     Text(stringResource(R.string.app_conflict_keep_server))
                 }
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.app_conflict_later)) }
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.app_conflict_later))
+                }
             }
         },
     )

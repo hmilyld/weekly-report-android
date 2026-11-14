@@ -12,9 +12,15 @@ object ListInput {
 
     const val FIRST_ITEM = "1. "
 
-    data class Edit(val value: String, val caret: Int)
+    data class Edit(
+        val value: String,
+        val caret: Int,
+    )
 
-    fun continueOrderedList(value: String, caret: Int): Edit? {
+    fun continueOrderedList(
+        value: String,
+        caret: Int,
+    ): Edit? {
         if (caret < 0 || caret > value.length) return null
         val lineStart = value.lastIndexOf('\n', (caret - 1).coerceAtLeast(0)).let {
             if (caret == 0) 0 else it + 1
@@ -50,7 +56,11 @@ object ListInput {
         )
     }
 
-    private fun renumber(tail: String, firstNumber: Int, depth: Int): String {
+    private fun renumber(
+        tail: String,
+        firstNumber: Int,
+        depth: Int,
+    ): String {
         val lines = tail.split('\n').toMutableList()
         var number = firstNumber
         for (i in 1 until lines.size) {
@@ -59,7 +69,9 @@ object ListInput {
             if (lineDepth < depth) break
             if (lineDepth > depth) continue
             val prefix = match.groups[1]?.value.orEmpty()
-            lines[i] = prefix + number + lines[i].substring(prefix.length + (match.groups[2]?.value?.length ?: 0))
+            lines[i] =
+                prefix + number +
+                lines[i].substring(prefix.length + (match.groups[2]?.value?.length ?: 0))
             number += 1
         }
         return lines.joinToString("\n")
@@ -73,7 +85,12 @@ object ListInput {
      * item. Returns null while an IME owns a composition, so candidate-window
      * input can never renumber the list.
      */
-    fun continuationForNewline(oldText: String, oldCursor: Int, newText: String, composing: Boolean): Edit? {
+    fun continuationForNewline(
+        oldText: String,
+        oldCursor: Int,
+        newText: String,
+        composing: Boolean,
+    ): Edit? {
         if (composing) return null
         if (oldCursor !in 0..oldText.length) return null
         val expected = oldText.substring(0, oldCursor) + "\n" + oldText.substring(oldCursor)

@@ -9,8 +9,11 @@ import androidx.fragment.app.FragmentActivity
 import com.hmilyld.weeklyreport.R
 
 object BiometricUi {
-    fun isAvailable(context: Context): Boolean = BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) ==
-        BiometricManager.BIOMETRIC_SUCCESS
+    fun isAvailable(context: Context): Boolean =
+        BiometricManager.from(
+            context,
+        ).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) ==
+            BiometricManager.BIOMETRIC_SUCCESS
 
     fun authenticate(
         context: Context,
@@ -29,11 +32,16 @@ object BiometricUi {
             activity,
             executor,
             object : BiometricPrompt.AuthenticationCallback() {
-                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                override fun onAuthenticationSucceeded(
+                    result: BiometricPrompt.AuthenticationResult,
+                ) {
                     onSuccess()
                 }
 
-                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                override fun onAuthenticationError(
+                    errorCode: Int,
+                    errString: CharSequence,
+                ) {
                     val message = when (errorCode) {
                         BiometricPrompt.ERROR_NEGATIVE_BUTTON,
                         BiometricPrompt.ERROR_USER_CANCELED,

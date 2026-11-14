@@ -133,7 +133,11 @@ fun DailyScreen(viewModel: DailyViewModel) {
                     state.days.forEachIndexed { index, day ->
                         DayRow(day = day, onClick = { viewModel.openEditor(day.date) })
                         if (index != state.days.lastIndex) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f))
+                            HorizontalDivider(
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(
+                                    alpha = 0.7f,
+                                ),
+                            )
                         }
                     }
                 }
@@ -162,7 +166,10 @@ fun DailyScreen(viewModel: DailyViewModel) {
 }
 
 @Composable
-private fun DayRow(day: DailyDayUi, onClick: () -> Unit) {
+private fun DayRow(
+    day: DailyDayUi,
+    onClick: () -> Unit,
+) {
     val rowColor = if (day.isToday) {
         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.38f)
     } else {
@@ -180,7 +187,11 @@ private fun DayRow(day: DailyDayUi, onClick: () -> Unit) {
             Text(
                 text = Dates.monthDay(day.date),
                 style = MaterialTheme.typography.titleMedium,
-                color = if (day.isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                color = if (day.isToday) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
             )
             Text(
                 text = Dates.weekdayShort(day.date),
@@ -219,7 +230,11 @@ private fun DayRow(day: DailyDayUi, onClick: () -> Unit) {
                     } else {
                         stringResource(R.string.daily_pill_pending_sync)
                     },
-                    color = if (day.deleted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary,
+                    color = if (day.deleted) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.secondary
+                    },
                     modifier = Modifier.padding(top = Spacing.xs),
                 )
             }

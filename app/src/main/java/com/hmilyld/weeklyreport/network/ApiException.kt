@@ -4,6 +4,7 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonPrimitive
@@ -17,7 +18,8 @@ class ApiException(
 ) : Exception(message) {
     val isNotFound: Boolean get() = status == 404
     val isWrongPassword: Boolean get() = status == 402
-    val requiresLogin: Boolean get() = kind == ApiErrorKind.UNAUTHORIZED || kind == ApiErrorKind.DECRYPTION
+    val requiresLogin: Boolean
+        get() = kind == ApiErrorKind.UNAUTHORIZED || kind == ApiErrorKind.DECRYPTION
 }
 
 enum class SessionProblem { UNAUTHORIZED, DECRYPTION_FAILED }
@@ -34,7 +36,10 @@ object ApiPayloads {
         encodeDefaults = true
     }
 
-    fun errorMessage(body: String?, status: Int): String {
+    fun errorMessage(
+        body: String?,
+        status: Int,
+    ): String {
         if (!body.isNullOrBlank()) {
             runCatching {
                 val element = json.parseToJsonElement(body)
@@ -65,34 +70,36 @@ object ApiPayloads {
     fun decryptionFailed(body: String?): Boolean {
         if (body.isNullOrBlank() || !body.contains("_decryption_failed")) return false
         return runCatching {
-            fun walk(element: kotlinx.serialization.json.JsonElement): Boolean = when (element) {
-                is JsonObject -> element.entries.any { (key, value) ->
-                    (key == "_decryption_failed" && (value as? JsonPrimitive)?.content == "true") ||
-                        walk(value)
+            fun walk(element: JsonElement): Boolean =
+                when (element) {
+                    is JsonObject -> element.entries.any { (key, value) ->
+                        val failed = (value as? JsonPrimitive)?.content == "true"
+                        (key == "_decryption_failed" && failed) || walk(value)
+                    }
+                    is JsonArray -> element.any { walk(it) }
+                    else -> false
                 }
-                is JsonArray -> element.any { walk(it) }
-                else -> false
-            }
             walk(json.parseToJsonElement(body))
         }.getOrDefault(false)
     }
 
-    fun toApiException(error: Throwable): ApiException = when (error) {
-        is ApiException -> error
-        is SocketTimeoutException -> ApiException(
-            status = null,
-            message = "连接超时，请检查服务器地址或网络",
-            kind = ApiErrorKind.NETWORK,
-        )
-        is IOException -> ApiException(
-            status = null,
-            message = "无法连接服务器，请检查网络或服务器地址",
-            kind = ApiErrorKind.NETWORK,
-        )
-        else -> ApiException(
-            status = null,
-            message = error.message ?: "请求失败",
-            kind = ApiErrorKind.PARSE,
-        )
-    }
+    fun toApiException(error: Throwable): ApiException =
+        when (error) {
+            is ApiException -> error
+            is SocketTimeoutException -> ApiException(
+                status = null,
+                message = "连接超时，请检查服务器地址或网络",
+                kind = ApiErrorKind.NETWORK,
+            )
+            is IOException -> ApiException(
+                status = null,
+                message = "无法连接服务器，请检查网络或服务器地址",
+                kind = ApiErrorKind.NETWORK,
+            )
+            else -> ApiException(
+                status = null,
+                message = error.message ?: "请求失败",
+                kind = ApiErrorKind.PARSE,
+            )
+        }
 }

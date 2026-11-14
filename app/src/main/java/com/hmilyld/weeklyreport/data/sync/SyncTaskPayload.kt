@@ -20,7 +20,11 @@ object ReplayRules {
         data object Conflict : Decision
     }
 
-    fun dailyDecision(serverContent: String?, baseline: String?, localContent: String): Decision {
+    fun dailyDecision(
+        serverContent: String?,
+        baseline: String?,
+        localContent: String,
+    ): Decision {
         if (serverContent == null) return Decision.Send
         if (serverContent == localContent) return Decision.AlreadySynced
         if (serverContent.isEmpty() && baseline.isNullOrEmpty()) return Decision.Send

@@ -5,13 +5,19 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class UrlRulesTest {
-    private fun ok(raw: String, allowCleartext: Boolean = false): String {
+    private fun ok(
+        raw: String,
+        allowCleartext: Boolean = false,
+    ): String {
         val result = UrlRules.validateAndNormalize(raw, allowCleartext)
         assertTrue("expected success for $raw but was $result", result is UrlRules.Result.Ok)
         return (result as UrlRules.Result.Ok).baseUrl
     }
 
-    private fun error(raw: String, allowCleartext: Boolean = false): String {
+    private fun error(
+        raw: String,
+        allowCleartext: Boolean = false,
+    ): String {
         val result = UrlRules.validateAndNormalize(raw, allowCleartext)
         assertTrue("expected error for $raw but was $result", result is UrlRules.Result.Error)
         return (result as UrlRules.Result.Error).message
@@ -27,7 +33,10 @@ class UrlRulesTest {
     @Test
     fun `release refuses cleartext http`() {
         assertTrue(error("http://192.168.1.5:18001").contains("HTTPS"))
-        assertEquals("http://192.168.1.5:18001/api/v1/", ok("192.168.1.5:18001", allowCleartext = true))
+        assertEquals(
+            "http://192.168.1.5:18001/api/v1/",
+            ok("192.168.1.5:18001", allowCleartext = true),
+        )
     }
 
     @Test

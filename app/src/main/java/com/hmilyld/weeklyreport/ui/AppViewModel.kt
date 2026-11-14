@@ -16,7 +16,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class AppViewModel(private val container: AppContainer) : ViewModel() {
+class AppViewModel(
+    private val container: AppContainer,
+) : ViewModel() {
     val session = container.session.state
     val problem = container.session.problem
     val theme: StateFlow<ThemeMode> = container.settings.theme

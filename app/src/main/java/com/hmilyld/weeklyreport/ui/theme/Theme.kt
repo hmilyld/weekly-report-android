@@ -197,7 +197,10 @@ private val AppShapes = Shapes(
 )
 
 @Composable
-fun WeeklyReportTheme(mode: ThemeMode, content: @Composable () -> Unit) {
+fun WeeklyReportTheme(
+    mode: ThemeMode,
+    content: @Composable () -> Unit,
+) {
     val dark = when (mode) {
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
         ThemeMode.LIGHT -> false

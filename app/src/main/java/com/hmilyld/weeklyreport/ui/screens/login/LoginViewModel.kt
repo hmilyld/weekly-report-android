@@ -81,10 +81,15 @@ class LoginViewModel(
                 api.healthAt(base)
                 settings.setServerBase(base)
                 _state.update {
-                    it.copy(testResult = UiMessage.Text(R.string.login_test_success_saved), testing = false)
+                    it.copy(
+                        testResult = UiMessage.Text(R.string.login_test_success_saved),
+                        testing = false,
+                    )
                 }
             } catch (error: ApiException) {
-                _state.update { it.copy(testResult = UiMessage.Raw(error.message), testing = false) }
+                _state.update {
+                    it.copy(testResult = UiMessage.Raw(error.message), testing = false)
+                }
             }
         }
     }

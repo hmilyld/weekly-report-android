@@ -1,4 +1,4 @@
-import java.util.Properties
+﻿import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -24,8 +24,8 @@ android {
         applicationId = "com.hmilyld.weeklyreport"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = providers.gradleProperty("app.versionCode").get().toInt()
+        versionName = providers.gradleProperty("app.versionName").get()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -87,27 +87,22 @@ android {
     }
 }
 
-// The module follows Kotlin's official coding conventions, which it already
-// declares through kotlin.code.style=official: trailing commas on multi-line
-// declarations and calls, ASCII-sorted imports, no wildcard imports. Three rules
-// are turned off because they reflow code without improving it when the line
-// length is unlimited: function-signature (splits every two-parameter
-// signature), chain-method-continuation (moves the first chain call onto its own
-// line) and multiline-expression-wrapping (breaks after `=`). Compose's
-// PascalCase composables are exempt from the naming rule, and the line length
-// stays unlimited because the longest lines left are SQL and JSON literals that
-// cannot be wrapped. Run `.\gradlew.bat :app:spotlessApply` after edits.
+// Coding style: ktlint's official conventions (which the module already declares
+// through kotlin.code.style=official: trailing commas, sorted imports, no
+// wildcard imports) plus Google's 100-column limit from the Android Kotlin style
+// guide. Two reflow rules stay off because they act on any multi-line expression
+// regardless of its length, turning `modifier = Modifier...` and
+// `Toast.makeText(...)` into noise; every other wrapping rule follows the
+// 100-column limit. Compose's PascalCase composables are exempt from the naming
+// rule, and imports stay in one ASCII-sorted list as Google asks. Run
+// `.\gradlew.bat :app:spotlessApply` after edits and keep `:app:spotlessCheck`
+// green before committing.
 val ktlintStyle = mapOf(
     "ktlint_code_style" to "ktlint_official",
     "ktlint_function_naming_ignore_when_annotated_with" to "Composable",
-    "max_line_length" to "off",
-    "ktlint_standard_function-signature" to "disabled",
-    "ktlint_standard_chain-method-continuation" to "disabled",
+    "max_line_length" to "100",
     "ktlint_standard_multiline-expression-wrapping" to "disabled",
-    "ktlint_standard_class-signature" to "disabled",
-    "ktlint_standard_parameter-list-wrapping" to "disabled",
-    // Google's Android style guide asks for one ASCII-sorted import list; the
-    // ktlint default groups java/kotlin at the end instead.
+    "ktlint_standard_chain-method-continuation" to "disabled",
     "ij_kotlin_imports_layout" to "*",
 )
 

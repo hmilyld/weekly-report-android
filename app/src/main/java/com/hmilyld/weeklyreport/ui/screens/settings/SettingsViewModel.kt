@@ -39,9 +39,13 @@ data class SettingsUiState(
     val notice: UiMessage? = null,
 )
 
-class SettingsViewModel(private val container: AppContainer) : ViewModel() {
+class SettingsViewModel(
+    private val container: AppContainer,
+) : ViewModel() {
     private val _state = MutableStateFlow(
-        SettingsUiState(serverInput = UrlRules.displayAddress(container.settings.serverBaseValue())),
+        SettingsUiState(
+            serverInput = UrlRules.displayAddress(container.settings.serverBaseValue()),
+        ),
     )
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
 
@@ -94,9 +98,16 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
             _state.update { it.copy(testing = true, testResult = null, serverError = null) }
             try {
                 container.api.healthAt(base)
-                _state.update { it.copy(testing = false, testResult = UiMessage.Text(R.string.settings_test_success)) }
+                _state.update {
+                    it.copy(
+                        testing = false,
+                        testResult = UiMessage.Text(R.string.settings_test_success),
+                    )
+                }
             } catch (error: ApiException) {
-                _state.update { it.copy(testing = false, testResult = UiMessage.Raw(error.message)) }
+                _state.update {
+                    it.copy(testing = false, testResult = UiMessage.Raw(error.message))
+                }
             }
         }
     }
@@ -110,7 +121,12 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
         val base = (normalized as UrlRules.Result.Ok).baseUrl
         val previous = container.settings.serverBaseValue()
         if (base == previous) {
-            _state.update { it.copy(serverError = null, testResult = UiMessage.Text(R.string.settings_test_unchanged)) }
+            _state.update {
+                it.copy(
+                    serverError = null,
+                    testResult = UiMessage.Text(R.string.settings_test_unchanged),
+                )
+            }
             return
         }
         viewModelScope.launch {
@@ -122,22 +138,34 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
-    fun changePassword(oldPassword: String, newPassword: String, confirm: String) {
+    fun changePassword(
+        oldPassword: String,
+        newPassword: String,
+        confirm: String,
+    ) {
         when {
             oldPassword.isEmpty() -> {
-                _state.update { it.copy(passwordError = UiMessage.Text(R.string.settings_password_old_required)) }
+                _state.update {
+                    it.copy(passwordError = UiMessage.Text(R.string.settings_password_old_required))
+                }
                 return
             }
             newPassword.length < 8 -> {
-                _state.update { it.copy(passwordError = UiMessage.Text(R.string.settings_password_too_short)) }
+                _state.update {
+                    it.copy(passwordError = UiMessage.Text(R.string.settings_password_too_short))
+                }
                 return
             }
             !newPassword.any { it.isLetter() } || !newPassword.any { it.isDigit() } -> {
-                _state.update { it.copy(passwordError = UiMessage.Text(R.string.settings_password_needs_mixed)) }
+                _state.update {
+                    it.copy(passwordError = UiMessage.Text(R.string.settings_password_needs_mixed))
+                }
                 return
             }
             newPassword != confirm -> {
-                _state.update { it.copy(passwordError = UiMessage.Text(R.string.settings_password_mismatch)) }
+                _state.update {
+                    it.copy(passwordError = UiMessage.Text(R.string.settings_password_mismatch))
+                }
                 return
             }
         }
@@ -252,7 +280,16 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             val owner = container.session.owner()
             _state.update {
-                it.copy(queue = if (owner.isBlank()) OutboxCounts(0, 0) else container.db.outboxCounts(owner))
+                it.copy(
+                    queue = if (owner.isBlank()) {
+                        OutboxCounts(
+                            0,
+                            0,
+                        )
+                    } else {
+                        container.db.outboxCounts(owner)
+                    },
+                )
             }
         }
     }

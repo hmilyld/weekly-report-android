@@ -16,7 +16,9 @@ class ApiPayloadsTest {
 
     @Test
     fun `validation detail list is joined`() {
-        val body = """{"detail":[{"loc":["body","new_password"],"msg":"too short"},{"msg":"need a digit"}]}"""
+        val body =
+            """{"detail":[{"loc":["body","new_password"],"msg":"too short"},""" +
+                """{"msg":"need a digit"}]}"""
         assertEquals("too short；need a digit", ApiPayloads.errorMessage(body, 422))
     }
 

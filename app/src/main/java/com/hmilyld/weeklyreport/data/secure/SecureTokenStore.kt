@@ -16,7 +16,9 @@ import javax.crypto.spec.GCMParameterSpec
  * Keystore. The password itself is never written to disk; it is used once for
  * the login request and then forgotten.
  */
-class SecureTokenStore(context: Context) {
+class SecureTokenStore(
+    context: Context,
+) {
     private val prefs = context.getSharedPreferences("wr_secure_session", Context.MODE_PRIVATE)
 
     fun saveToken(token: String) {

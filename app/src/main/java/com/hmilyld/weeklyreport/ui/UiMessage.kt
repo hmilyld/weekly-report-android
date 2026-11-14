@@ -14,20 +14,26 @@ import androidx.compose.ui.platform.LocalContext
  * failures). Resolve it in the UI, never in the ViewModel.
  */
 sealed interface UiMessage {
-    data class Text(@StringRes val id: Int, val args: List<Any> = emptyList()) : UiMessage
+    data class Text(
+        @StringRes val id: Int,
+        val args: List<Any> = emptyList(),
+    ) : UiMessage
 
-    data class Raw(val value: String) : UiMessage
+    data class Raw(
+        val value: String,
+    ) : UiMessage
 }
 
 @Composable
 fun UiMessage.asText(): String = resolve(LocalContext.current)
 
-fun UiMessage.resolve(context: Context): String = when (this) {
-    is UiMessage.Text -> if (args.isEmpty()) {
-        context.getString(id)
-    } else {
-        context.getString(id, *args.toTypedArray())
-    }
+fun UiMessage.resolve(context: Context): String =
+    when (this) {
+        is UiMessage.Text -> if (args.isEmpty()) {
+            context.getString(id)
+        } else {
+            context.getString(id, *args.toTypedArray())
+        }
 
-    is UiMessage.Raw -> value
-}
+        is UiMessage.Raw -> value
+    }

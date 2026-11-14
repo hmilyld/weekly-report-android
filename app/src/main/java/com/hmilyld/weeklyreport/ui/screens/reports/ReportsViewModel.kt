@@ -53,7 +53,9 @@ data class ReportUiState(
     val canSave: Boolean get() = editing && draft != content && draft.isNotBlank()
 }
 
-class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
+class ReportsViewModel(
+    private val repo: ReportRepository,
+) : ViewModel() {
     private val _state = MutableStateFlow(ReportUiState())
     val state: StateFlow<ReportUiState> = _state.asStateFlow()
 
@@ -116,14 +118,24 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
         val state = _state.value
         val seq = ++loadSeq
         viewModelScope.launch {
-            _state.update { it.copy(loading = true, error = null, notGenerated = false, offline = false) }
+            _state.update {
+                it.copy(loading = true, error = null, notGenerated = false, offline = false)
+            }
             try {
                 if (state.cadence == ReportCadence.WEEKLY) {
                     val report = repo.weekly(Dates.iso(state.monday))
-                    if (seq == loadSeq) applyReport(report?.content, report?.modelName, report?.generatedAt)
+                    if (seq ==
+                        loadSeq
+                    ) {
+                        applyReport(report?.content, report?.modelName, report?.generatedAt)
+                    }
                 } else {
                     val report = repo.monthly(state.year, state.month)
-                    if (seq == loadSeq) applyReport(report?.content, report?.modelName, report?.generatedAt)
+                    if (seq ==
+                        loadSeq
+                    ) {
+                        applyReport(report?.content, report?.modelName, report?.generatedAt)
+                    }
                 }
             } catch (error: ApiException) {
                 if (seq != loadSeq) return@launch
@@ -262,7 +274,11 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
         }
     }
 
-    private fun applyReport(content: String?, modelName: String?, generatedAt: String?) {
+    private fun applyReport(
+        content: String?,
+        modelName: String?,
+        generatedAt: String?,
+    ) {
         if (content == null) {
             _state.update {
                 it.copy(

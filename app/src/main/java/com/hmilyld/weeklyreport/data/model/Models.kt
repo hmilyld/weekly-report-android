@@ -4,7 +4,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class LoginRequest(val username: String, val password: String)
+data class LoginRequest(
+    val username: String,
+    val password: String,
+)
 
 @Serializable
 data class TokenResponse(
@@ -13,7 +16,9 @@ data class TokenResponse(
 )
 
 @Serializable
-data class SetupStatus(@SerialName("needs_setup") val needsSetup: Boolean)
+data class SetupStatus(
+    @SerialName("needs_setup") val needsSetup: Boolean,
+)
 
 @Serializable
 data class ChangePasswordRequest(
@@ -47,7 +52,10 @@ data class DailyWeekResponse(
 )
 
 @Serializable
-data class DailySaveRequest(val date: String, val content: String)
+data class DailySaveRequest(
+    val date: String,
+    val content: String,
+)
 
 @Serializable
 data class TaskDto(
@@ -76,7 +84,10 @@ data class CompletedTaskListResponse(
 )
 
 @Serializable
-data class TaskCreateRequest(val content: String, val deadline: String? = null)
+data class TaskCreateRequest(
+    val content: String,
+    val deadline: String? = null,
+)
 
 @Serializable
 data class TaskUpdateRequest(
@@ -108,10 +119,16 @@ data class MonthlyReportDto(
 )
 
 @Serializable
-data class ContentUpdateRequest(val content: String)
+data class ContentUpdateRequest(
+    val content: String,
+)
 
 @Serializable
-data class MessageResponse(val message: String? = null)
+data class MessageResponse(
+    val message: String? = null,
+)
 
 @Serializable
-data class DetailResponse(val detail: String? = null)
+data class DetailResponse(
+    val detail: String? = null,
+)

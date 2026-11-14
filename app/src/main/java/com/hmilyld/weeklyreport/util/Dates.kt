@@ -5,6 +5,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 
 /** Calendar rules shared by the daily list, reports and notifications. */
@@ -14,31 +15,46 @@ object Dates {
 
     fun today(): LocalDate = LocalDate.now()
 
-    fun mondayOf(date: LocalDate): LocalDate = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    fun mondayOf(date: LocalDate): LocalDate =
+        date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
     fun iso(date: LocalDate): String = date.format(ISO)
 
-    fun parseIso(value: String?): LocalDate? = if (value.isNullOrBlank()) null else runCatching { LocalDate.parse(value, ISO) }.getOrNull()
+    fun parseIso(value: String?): LocalDate? {
+        if (value.isNullOrBlank()) return null
+        return runCatching { LocalDate.parse(value, ISO) }.getOrNull()
+    }
 
     fun weekDates(monday: LocalDate): List<LocalDate> = (0L..6L).map { monday.plusDays(it) }
 
     fun weekRangeLabel(monday: LocalDate): String {
         val sunday = monday.plusDays(6)
-        return "${monday.monthValue}月${monday.dayOfMonth}日 - ${sunday.monthValue}月${sunday.dayOfMonth}日"
+        return "${monday.monthValue}月${monday.dayOfMonth}日 - " +
+            "${sunday.monthValue}月${sunday.dayOfMonth}日"
     }
 
-    fun monthLabel(year: Int, month: Int): String = "${year}年${month}月"
+    fun monthLabel(
+        year: Int,
+        month: Int,
+    ): String = "${year}年${month}月"
 
     fun weekdayShort(date: LocalDate): String = WEEKDAYS[date.dayOfWeek.value - 1]
 
-    fun fullDateLabel(date: LocalDate): String = "${date.year}年${date.monthValue}月${date.dayOfMonth}日 · ${weekdayShort(date)}"
+    fun fullDateLabel(date: LocalDate): String =
+        "${date.year}年${date.monthValue}月${date.dayOfMonth}日 · ${weekdayShort(date)}"
 
     fun monthDay(date: LocalDate): String = "%02d.%02d".format(date.monthValue, date.dayOfMonth)
 
-    fun daysUntil(deadline: LocalDate, today: LocalDate): Long = java.time.temporal.ChronoUnit.DAYS.between(today, deadline)
+    fun daysUntil(
+        deadline: LocalDate,
+        today: LocalDate,
+    ): Long = ChronoUnit.DAYS.between(today, deadline)
 
     /** A deadline today or within two days is urgent; earlier than today is overdue. */
-    fun deadlineState(deadline: LocalDate?, today: LocalDate): DeadlineState {
+    fun deadlineState(
+        deadline: LocalDate?,
+        today: LocalDate,
+    ): DeadlineState {
         if (deadline == null) return DeadlineState.NONE
         val days = daysUntil(deadline, today)
         return when {
@@ -62,7 +78,10 @@ object Dates {
         return runCatching { Instant.parse(normalized) }.getOrNull()
     }
 
-    fun formatDateTime(value: String?, fallback: String = "—"): String {
+    fun formatDateTime(
+        value: String?,
+        fallback: String = "—",
+    ): String {
         val instant = parseServerInstant(value) ?: return fallback
         val local = instant.atZone(ZoneId.systemDefault())
         return "%04d-%02d-%02d %02d:%02d".format(
@@ -75,7 +94,10 @@ object Dates {
     }
 
     /** Compare two server timestamps; null is treated as "unknown / older than anything". */
-    fun serverTimeChanged(base: String?, current: String?): Boolean {
+    fun serverTimeChanged(
+        base: String?,
+        current: String?,
+    ): Boolean {
         if (current.isNullOrBlank()) return false
         if (base.isNullOrBlank()) return true
         val baseInstant = parseServerInstant(base)

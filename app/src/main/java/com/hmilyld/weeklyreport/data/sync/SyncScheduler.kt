@@ -14,7 +14,9 @@ import java.util.concurrent.TimeUnit
  * constraint is the durable retry path after the process dies or connectivity
  * returns; the repository also triggers an in-process drain for immediacy.
  */
-class SyncScheduler(private val context: Context) {
+class SyncScheduler(
+    private val context: Context,
+) {
     fun requestDrain() {
         val request = OneTimeWorkRequestBuilder<OutboxWorker>()
             .setConstraints(

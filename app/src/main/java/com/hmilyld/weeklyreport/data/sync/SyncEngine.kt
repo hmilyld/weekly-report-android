@@ -16,11 +16,18 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 
 sealed interface SyncResult {
-    data class Done(val sent: Int) : SyncResult
+    data class Done(
+        val sent: Int,
+    ) : SyncResult
 
-    data class Stopped(val reason: String, val transient: Boolean) : SyncResult
+    data class Stopped(
+        val reason: String,
+        val transient: Boolean,
+    ) : SyncResult
 
-    data class NeedsLogin(val reason: String) : SyncResult
+    data class NeedsLogin(
+        val reason: String,
+    ) : SyncResult
 }
 
 /**
@@ -36,63 +43,75 @@ class SyncEngine(
 ) {
     private val mutex = Mutex()
 
-    suspend fun drain(): SyncResult = withContext(Dispatchers.IO) {
-        mutex.withLock {
-            val owner = session.owner()
-            if (owner.isBlank()) return@withLock SyncResult.Stopped("未登录，暂不发送", transient = false)
-            // A locked session has no token in memory. Sending unauthenticated
-            // requests would turn a 401 into a logout, so wait for unlock.
-            if (session.tokenOrNull() == null) {
-                return@withLock SyncResult.Stopped("会话已锁定，解锁后再同步", transient = false)
-            }
-            var sent = 0
-            var changed = false
-            while (true) {
-                val item = db.nextOutbox(owner) ?: break
-                Log.i(TAG, "drain ${item.kind} key=${item.entityKey} id=${item.id} rev=${item.revision}")
-                try {
-                    val outcome = handle(item)
-                    when (outcome) {
-                        Outcome.Sent -> {
-                            sent += 1
-                            changed = true
+    suspend fun drain(): SyncResult =
+        withContext(Dispatchers.IO) {
+            mutex.withLock {
+                val owner = session.owner()
+                if (owner.isBlank()) {
+                    return@withLock SyncResult.Stopped("未登录，暂不发送", transient = false)
+                }
+                // A locked session has no token in memory. Sending unauthenticated
+                // requests would turn a 401 into a logout, so wait for unlock.
+                if (session.tokenOrNull() == null) {
+                    return@withLock SyncResult.Stopped("会话已锁定，解锁后再同步", transient = false)
+                }
+                var sent = 0
+                var changed = false
+                while (true) {
+                    val item = db.nextOutbox(owner) ?: break
+                    Log.i(
+                        TAG,
+                        "drain ${item.kind} key=${item.entityKey} id=${item.id} " +
+                            "rev=${item.revision}",
+                    )
+                    try {
+                        val outcome = handle(item)
+                        when (outcome) {
+                            Outcome.Sent -> {
+                                sent += 1
+                                changed = true
+                            }
+                            Outcome.Conflict -> changed = true
                         }
-                        Outcome.Conflict -> changed = true
-                    }
-                } catch (error: ApiException) {
-                    Log.w(TAG, "failed ${item.kind} key=${item.entityKey}: ${error.status} ${error.message}")
-                    when (SyncErrorPolicy.action(error)) {
-                        SyncErrorPolicy.Action.NEEDS_LOGIN -> {
-                            db.markOutboxError(item.id, error.message)
-                            if (changed) onChanged()
-                            return@withLock SyncResult.NeedsLogin(error.message)
-                        }
-                        SyncErrorPolicy.Action.RETRY_LATER -> {
-                            db.markOutboxError(item.id, error.message)
-                            if (changed) onChanged()
-                            return@withLock SyncResult.Stopped(error.message, transient = true)
-                        }
-                        SyncErrorPolicy.Action.FAIL_ITEM -> {
-                            // Park this row and continue; later writes must not
-                            // be blocked by one permanently rejected item.
-                            db.markOutboxFailed(item.id, error.message)
-                            changed = true
+                    } catch (error: ApiException) {
+                        Log.w(
+                            TAG,
+                            "failed ${item.kind} key=${item.entityKey}: " +
+                                "${error.status} ${error.message}",
+                        )
+                        when (SyncErrorPolicy.action(error)) {
+                            SyncErrorPolicy.Action.NEEDS_LOGIN -> {
+                                db.markOutboxError(item.id, error.message)
+                                if (changed) onChanged()
+                                return@withLock SyncResult.NeedsLogin(error.message)
+                            }
+                            SyncErrorPolicy.Action.RETRY_LATER -> {
+                                db.markOutboxError(item.id, error.message)
+                                if (changed) onChanged()
+                                return@withLock SyncResult.Stopped(error.message, transient = true)
+                            }
+                            SyncErrorPolicy.Action.FAIL_ITEM -> {
+                                // Park this row and continue; later writes must not
+                                // be blocked by one permanently rejected item.
+                                db.markOutboxFailed(item.id, error.message)
+                                changed = true
+                            }
                         }
                     }
                 }
+                if (changed) onChanged()
+                SyncResult.Done(sent)
             }
-            if (changed) onChanged()
-            SyncResult.Done(sent)
         }
-    }
 
-    private suspend fun handle(item: OutboxItem): Outcome = when (item.kind) {
-        OutboxKind.DAILY_SAVE -> sendDailySave(item)
-        OutboxKind.DAILY_DELETE -> sendDailyDelete(item)
-        OutboxKind.TASK_CREATE -> sendTaskCreate(item)
-        OutboxKind.TASK_UPDATE -> sendTaskUpdate(item)
-        OutboxKind.TASK_DELETE -> sendTaskDelete(item)
-    }
+    private suspend fun handle(item: OutboxItem): Outcome =
+        when (item.kind) {
+            OutboxKind.DAILY_SAVE -> sendDailySave(item)
+            OutboxKind.DAILY_DELETE -> sendDailyDelete(item)
+            OutboxKind.TASK_CREATE -> sendTaskCreate(item)
+            OutboxKind.TASK_UPDATE -> sendTaskUpdate(item)
+            OutboxKind.TASK_DELETE -> sendTaskDelete(item)
+        }
 
     private suspend fun sendDailySave(item: OutboxItem): Outcome {
         val date = item.entityKey
@@ -233,15 +252,16 @@ class SyncEngine(
         return Outcome.Sent
     }
 
-    private fun decodePayload(item: OutboxItem): SyncTaskPayload? = try {
-        ApiPayloads.json.decodeFromString(SyncTaskPayload.serializer(), item.payload)
-    } catch (error: SerializationException) {
-        // A payload that cannot be decoded will never decode; park it instead
-        // of retrying (and blocking the queue behind) the same row forever.
-        Log.e(TAG, "bad payload for ${item.kind} ${item.entityKey}", error)
-        db.markOutboxFailed(item.id, "本地队列数据损坏")
-        null
-    }
+    private fun decodePayload(item: OutboxItem): SyncTaskPayload? =
+        try {
+            ApiPayloads.json.decodeFromString(SyncTaskPayload.serializer(), item.payload)
+        } catch (error: SerializationException) {
+            // A payload that cannot be decoded will never decode; park it instead
+            // of retrying (and blocking the queue behind) the same row forever.
+            Log.e(TAG, "bad payload for ${item.kind} ${item.entityKey}", error)
+            db.markOutboxFailed(item.id, "本地队列数据损坏")
+            null
+        }
 
     private enum class Outcome { Sent, Conflict }
 

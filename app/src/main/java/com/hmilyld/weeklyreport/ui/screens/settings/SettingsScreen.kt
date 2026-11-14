@@ -157,7 +157,10 @@ fun SettingsScreen(
                     enabled = !state.testing,
                 ) {
                     if (state.testing) {
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                        )
                         Spacer(modifier = Modifier.size(Spacing.xs))
                     }
                     Text(stringResource(R.string.common_test_connection))
@@ -213,7 +216,10 @@ fun SettingsScreen(
                 }
                 IconButton(onClick = viewModel::refreshUser, enabled = !state.loadingUser) {
                     if (state.loadingUser) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                        )
                     } else {
                         Icon(
                             Icons.Outlined.Refresh,
@@ -238,7 +244,11 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
                 OutlinedButton(onClick = { showPasswordDialog = true }) {
-                    Icon(Icons.Outlined.Key, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.Outlined.Key,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
                     Text(
                         stringResource(R.string.settings_change_password),
                         modifier = Modifier.padding(start = Spacing.xs),
@@ -250,7 +260,11 @@ fun SettingsScreen(
                         contentColor = MaterialTheme.colorScheme.error,
                     ),
                 ) {
-                    Icon(Icons.AutoMirrored.Outlined.Logout, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.AutoMirrored.Outlined.Logout,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
                     Text(
                         stringResource(R.string.settings_logout),
                         modifier = Modifier.padding(start = Spacing.xs),
@@ -277,7 +291,9 @@ fun SettingsScreen(
                         label = {
                             Text(
                                 when (mode) {
-                                    ThemeMode.SYSTEM -> stringResource(R.string.settings_theme_system)
+                                    ThemeMode.SYSTEM -> stringResource(
+                                        R.string.settings_theme_system,
+                                    )
                                     ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
                                     ThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
                                 },
@@ -321,7 +337,9 @@ fun SettingsScreen(
                             BiometricUi.authenticate(
                                 context = context,
                                 title = context.getString(R.string.settings_biometric_prompt_title),
-                                subtitle = context.getString(R.string.settings_biometric_prompt_subtitle),
+                                subtitle = context.getString(
+                                    R.string.settings_biometric_prompt_subtitle,
+                                ),
                                 onSuccess = { onBiometricChange(true) },
                                 onFailure = onNotify,
                             )
@@ -368,10 +386,14 @@ fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm),
                 maxItemsInEachRow = 2,
             ) {
-                if (!notificationsGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (!notificationsGranted &&
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                ) {
                     OutlinedButton(onClick = {
                         if (!NotificationPermission.openSettings(context)) {
-                            onNotify(context.getString(R.string.settings_notifications_settings_failed))
+                            onNotify(
+                                context.getString(R.string.settings_notifications_settings_failed),
+                            )
                         }
                     }) {
                         Text(
@@ -395,7 +417,11 @@ fun SettingsScreen(
                     )
                 }
                 OutlinedButton(onClick = viewModel::pinWidget) {
-                    Icon(Icons.Outlined.Widgets, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.Outlined.Widgets,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
                     Text(
                         stringResource(R.string.settings_add_widget),
                         modifier = Modifier.padding(start = Spacing.xs),
@@ -453,7 +479,11 @@ fun SettingsScreen(
                     onClick = viewModel::retryQueue,
                     enabled = state.queue.pending > 0 || state.queue.failed > 0,
                 ) {
-                    Icon(Icons.Outlined.Sync, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.Outlined.Sync,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
                     Text(
                         stringResource(R.string.settings_retry_now),
                         modifier = Modifier.padding(start = Spacing.xs),
@@ -533,7 +563,10 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingsSection(title: String, content: @Composable () -> Unit) {
+private fun SettingsSection(
+    title: String,
+    content: @Composable () -> Unit,
+) {
     Column(modifier = Modifier.padding(top = Spacing.lg)) {
         Text(
             text = title,
@@ -566,7 +599,12 @@ private fun PasswordDialog(
 
     AlertDialog(
         onDismissRequest = { if (!state.changingPassword) onDismiss() },
-        title = { Text(stringResource(R.string.settings_change_password), style = MaterialTheme.typography.titleLarge) },
+        title = {
+            Text(
+                stringResource(R.string.settings_change_password),
+                style = MaterialTheme.typography.titleLarge,
+            )
+        },
         text = {
             Column {
                 Text(

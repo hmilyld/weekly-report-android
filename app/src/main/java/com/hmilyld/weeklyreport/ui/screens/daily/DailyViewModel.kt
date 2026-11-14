@@ -92,7 +92,12 @@ class DailyViewModel(
             val merged = repo.weekDays(titleMonday)
             if (!isCurrentRequest(titleMonday, sequence)) return
             _state.update {
-                it.copy(days = merged.toRows(titleMonday), offline = false, error = null, loading = false)
+                it.copy(
+                    days = merged.toRows(titleMonday),
+                    offline = false,
+                    error = null,
+                    loading = false,
+                )
             }
         } catch (error: ApiException) {
             if (!isCurrentRequest(titleMonday, sequence)) return
@@ -113,7 +118,10 @@ class DailyViewModel(
         loadedOnce = true
     }
 
-    private fun isCurrentRequest(monday: LocalDate, sequence: Long): Boolean = sequence == loadSequence && _state.value.monday == monday
+    private fun isCurrentRequest(
+        monday: LocalDate,
+        sequence: Long,
+    ): Boolean = sequence == loadSequence && _state.value.monday == monday
 
     fun previousWeek() {
         _state.update { it.copy(monday = it.monday.minusDays(7)) }
@@ -185,10 +193,14 @@ class DailyViewModel(
         }
     }
 
-    private fun editorState(date: LocalDate, cached: CachedDay?): EditorState {
+    private fun editorState(
+        date: LocalDate,
+        cached: CachedDay?,
+    ): EditorState {
         val content = cached?.takeIf { !it.deleted }?.content.orEmpty()
         val seeded = content.isBlank()
-        val hasRecord = ListInput.bodyWithoutMarkers(content).trim().isNotEmpty() && !cached?.deleted.orFalse()
+        val hasRecord =
+            ListInput.bodyWithoutMarkers(content).trim().isNotEmpty() && !cached?.deleted.orFalse()
         return EditorState(
             date = date,
             initialContent = if (seeded) ListInput.FIRST_ITEM else content,

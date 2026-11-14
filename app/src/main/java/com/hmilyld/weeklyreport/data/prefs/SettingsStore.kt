@@ -7,7 +7,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-enum class ThemeMode(val value: String) {
+enum class ThemeMode(
+    val value: String,
+) {
     SYSTEM("system"),
     LIGHT("light"),
     DARK("dark"),
@@ -18,7 +20,9 @@ enum class ThemeMode(val value: String) {
     }
 }
 
-class SettingsStore(context: Context) {
+class SettingsStore(
+    context: Context,
+) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("wr_settings", Context.MODE_PRIVATE)
 

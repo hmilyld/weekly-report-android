@@ -197,7 +197,10 @@ fun ReportsScreen(
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
                     )
-                    Text(stringResource(R.string.common_edit), modifier = Modifier.padding(start = Spacing.xs))
+                    Text(
+                        stringResource(R.string.common_edit),
+                        modifier = Modifier.padding(start = Spacing.xs),
+                    )
                 }
                 TextButton(
                     onClick = { showRegenerateConfirm = true },
@@ -224,7 +227,10 @@ fun ReportsScreen(
                         modifier = Modifier.padding(top = Spacing.md),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                        )
                         Column(modifier = Modifier.padding(start = Spacing.sm)) {
                             Text(
                                 stringResource(R.string.reports_generating_title, periodName),
@@ -250,7 +256,10 @@ fun ReportsScreen(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                            )
                             Text(
                                 stringResource(R.string.reports_loading, periodName),
                                 style = MaterialTheme.typography.bodySmall,
@@ -294,7 +303,10 @@ fun ReportsScreen(
                                         modifier = Modifier.size(18.dp),
                                     )
                                     Text(
-                                        stringResource(R.string.reports_generate_action, periodName),
+                                        stringResource(
+                                            R.string.reports_generate_action,
+                                            periodName,
+                                        ),
                                         modifier = Modifier.padding(start = Spacing.xs),
                                     )
                                 }
@@ -361,7 +373,11 @@ fun ReportsScreen(
                             ) {
                                 TextButton(
                                     onClick = {
-                                        if (state.dirty) showCancelEditConfirm = true else viewModel.cancelEdit()
+                                        if (state.dirty) {
+                                            showCancelEditConfirm = true
+                                        } else {
+                                            viewModel.cancelEdit()
+                                        }
                                     },
                                     enabled = !state.saving,
                                 ) { Text(stringResource(R.string.common_cancel)) }
@@ -485,12 +501,19 @@ fun ReportsScreen(
     }
 }
 
-private fun copyToClipboard(context: android.content.Context, content: String) {
+private fun copyToClipboard(
+    context: android.content.Context,
+    content: String,
+) {
     val manager = context.getSystemService(ClipboardManager::class.java) ?: return
     manager.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.app_name), content))
 }
 
-private fun shareText(context: android.content.Context, label: String, content: String) {
+private fun shareText(
+    context: android.content.Context,
+    label: String,
+    content: String,
+) {
     val send = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.reports_share_subject, label))
