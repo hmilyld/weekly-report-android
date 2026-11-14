@@ -63,6 +63,8 @@ import com.hmilyld.weeklyreport.AppContainer
 import com.hmilyld.weeklyreport.R
 import com.hmilyld.weeklyreport.data.SessionState
 import com.hmilyld.weeklyreport.data.local.OutboxItem
+import com.hmilyld.weeklyreport.data.local.OutboxKind
+import com.hmilyld.weeklyreport.data.prefs.ThemeMode
 import com.hmilyld.weeklyreport.ui.components.Banner
 import com.hmilyld.weeklyreport.ui.screens.daily.DailyScreen
 import com.hmilyld.weeklyreport.ui.screens.daily.DailyViewModel
@@ -86,14 +88,14 @@ data class WidgetOpen(
     val date: LocalDate?,
     val openEditor: Boolean,
     val tab: String?,
-    val id: Long
+    val id: Long,
 )
 
 private enum class AppTab(@StringRes val labelRes: Int) {
     DAILY(R.string.app_tab_daily),
     TASKS(R.string.app_tab_tasks),
     REPORTS(R.string.app_tab_reports),
-    SETTINGS(R.string.app_tab_settings)
+    SETTINGS(R.string.app_tab_settings),
 }
 
 // Material 3 navigation bars show the filled icon for the current tab and the
@@ -118,7 +120,7 @@ private fun AppTab.icon(selected: Boolean): ImageVector = if (selected) {
 fun AppRoot(
     container: AppContainer,
     widgetRequest: StateFlow<WidgetOpen?>,
-    onWidgetRequestConsumed: () -> Unit
+    onWidgetRequestConsumed: () -> Unit,
 ) {
     val appViewModel: AppViewModel = viewModel(factory = SimpleVmFactory { AppViewModel(container) })
     val session by appViewModel.session.collectAsState()
@@ -128,12 +130,12 @@ fun AppRoot(
     when (val current = session) {
         is SessionState.LoggedOut -> {
             val loginViewModel: LoginViewModel = viewModel(
-                factory = SimpleVmFactory { LoginViewModel(container.settings, container.session, container.api) }
+                factory = SimpleVmFactory { LoginViewModel(container.settings, container.session, container.api) },
             )
             LoginScreen(
                 viewModel = loginViewModel,
                 problem = problem,
-                onNotify = {}
+                onNotify = {},
             )
         }
 
@@ -150,11 +152,11 @@ fun AppRoot(
                         title = unlockTitle,
                         subtitle = current.username,
                         onSuccess = { container.session.unlock() },
-                        onFailure = { }
+                        onFailure = { },
                     )
                 },
                 onLoginWithPassword = { appViewModel.logout() },
-                onNotify = {}
+                onNotify = {},
             )
         }
 
@@ -164,7 +166,7 @@ fun AppRoot(
                 theme = theme,
                 appViewModel = appViewModel,
                 widgetRequest = widgetRequest,
-                onWidgetRequestConsumed = onWidgetRequestConsumed
+                onWidgetRequestConsumed = onWidgetRequestConsumed,
             )
         }
     }
@@ -173,22 +175,22 @@ fun AppRoot(
 @Composable
 private fun LoggedInRoot(
     container: AppContainer,
-    theme: com.hmilyld.weeklyreport.data.prefs.ThemeMode,
+    theme: ThemeMode,
     appViewModel: AppViewModel,
     widgetRequest: StateFlow<WidgetOpen?>,
-    onWidgetRequestConsumed: () -> Unit
+    onWidgetRequestConsumed: () -> Unit,
 ) {
     val dailyViewModel: DailyViewModel = viewModel(
-        factory = SimpleVmFactory { DailyViewModel(container.dailyRepository, container.dataVersion) }
+        factory = SimpleVmFactory { DailyViewModel(container.dailyRepository, container.dataVersion) },
     )
     val tasksViewModel: TasksViewModel = viewModel(
-        factory = SimpleVmFactory { TasksViewModel(container.taskRepository, container.dataVersion) }
+        factory = SimpleVmFactory { TasksViewModel(container.taskRepository, container.dataVersion) },
     )
     val reportsViewModel: ReportsViewModel = viewModel(
-        factory = SimpleVmFactory { ReportsViewModel(container.reportRepository) }
+        factory = SimpleVmFactory { ReportsViewModel(container.reportRepository) },
     )
     val settingsViewModel: SettingsViewModel = viewModel(
-        factory = SimpleVmFactory { SettingsViewModel(container) }
+        factory = SimpleVmFactory { SettingsViewModel(container) },
     )
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -238,7 +240,7 @@ private fun LoggedInRoot(
             tasksViewModel.messages,
             reportsViewModel.messages,
             settingsViewModel.messages,
-            appViewModel.messages
+            appViewModel.messages,
         ).collect { message ->
             snackbarHostState.showSnackbar(message.resolve(snackbarContext), withDismissAction = true)
         }
@@ -274,8 +276,8 @@ private fun LoggedInRoot(
                             colors = NavigationRailItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.primaryContainer
-                            )
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            ),
                         )
                     }
                 }
@@ -297,25 +299,25 @@ private fun LoggedInRoot(
                                             // The label below already names the
                                             // tab; a description here would be
                                             // read twice.
-                                            contentDescription = null
+                                            contentDescription = null,
                                         )
                                     },
                                     label = { Text(stringResource(entry.labelRes)) },
                                     colors = NavigationBarItemDefaults.colors(
                                         selectedIconColor = MaterialTheme.colorScheme.primary,
                                         selectedTextColor = MaterialTheme.colorScheme.primary,
-                                        indicatorColor = MaterialTheme.colorScheme.primaryContainer
-                                    )
+                                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                    ),
                                 )
                             }
                         }
                     }
-                }
+                },
             ) { innerPadding ->
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding)
+                        .padding(innerPadding),
                 ) {
                     when {
                         counts.conflicts > 0 -> Banner(
@@ -325,7 +327,7 @@ private fun LoggedInRoot(
                                     Text(stringResource(R.string.app_banner_action))
                                 }
                             },
-                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
+                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
                         )
 
                         counts.failed > 0 -> Banner(
@@ -337,7 +339,7 @@ private fun LoggedInRoot(
                                     Text(stringResource(R.string.app_banner_action))
                                 }
                             },
-                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
+                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
                         )
 
                         counts.pending > 0 -> Banner(
@@ -349,7 +351,7 @@ private fun LoggedInRoot(
                                     Text(stringResource(R.string.common_retry))
                                 }
                             },
-                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
+                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
                         )
                     }
 
@@ -357,14 +359,14 @@ private fun LoggedInRoot(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth(),
-                        contentAlignment = Alignment.TopCenter
+                        contentAlignment = Alignment.TopCenter,
                     ) {
                         // Reading and writing screens get a comfortable line length on
                         // wide windows instead of stretching across the whole tablet.
                         Box(
                             modifier = Modifier
                                 .widthIn(max = 840.dp)
-                                .fillMaxHeight()
+                                .fillMaxHeight(),
                         ) {
                             // Each tab keeps its own scroll position and text fields
                             // when the user switches away and back.
@@ -379,7 +381,7 @@ private fun LoggedInRoot(
                                         biometricEnabled = biometricEnabled,
                                         onThemeChange = appViewModel::setTheme,
                                         onBiometricChange = settingsViewModel::setBiometricEnabled,
-                                        onNotify = notify
+                                        onNotify = notify,
                                     )
                                 }
                             }
@@ -400,7 +402,7 @@ private fun LoggedInRoot(
             onOverwrite = {
                 appViewModel.resolveOverwrite(conflicts.first().id)
             },
-            onDismiss = { showConflicts = false }
+            onDismiss = { showConflicts = false },
         )
     }
 }
@@ -411,15 +413,15 @@ private fun ConflictDialog(
     total: Int,
     onKeepServer: () -> Unit,
     onOverwrite: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
-    val localText = if (conflict.kind.name == "DAILY_DELETE") {
+    val localText = if (conflict.kind == OutboxKind.DAILY_DELETE) {
         stringResource(R.string.app_conflict_local_delete)
     } else {
         stringResource(
             R.string.app_conflict_local_text,
             ListInput.bodyWithoutMarkers(conflict.payload).trim()
-                .ifEmpty { stringResource(R.string.app_conflict_blank) }
+                .ifEmpty { stringResource(R.string.app_conflict_blank) },
         )
     }
     AlertDialog(
@@ -427,7 +429,7 @@ private fun ConflictDialog(
         title = {
             Text(
                 text = stringResource(R.string.app_conflict_title, conflict.entityKey),
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleLarge,
             )
         },
         text = {
@@ -435,22 +437,22 @@ private fun ConflictDialog(
                 Text(
                     text = stringResource(R.string.app_conflict_body, total),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = Spacing.sm),
-                    color = MaterialTheme.colorScheme.outlineVariant
+                    color = MaterialTheme.colorScheme.outlineVariant,
                 )
                 Text(localText, style = MaterialTheme.typography.bodyMedium)
                 Text(
                     text = stringResource(
                         R.string.app_conflict_server_text,
                         conflict.serverContent?.takeIf { it.isNotBlank() }
-                            ?: stringResource(R.string.app_conflict_blank)
+                            ?: stringResource(R.string.app_conflict_blank),
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(top = Spacing.sm)
+                    modifier = Modifier.padding(top = Spacing.sm),
                 )
             }
         },
@@ -459,7 +461,7 @@ private fun ConflictDialog(
                 Text(
                     stringResource(R.string.app_conflict_overwrite),
                     color = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
                 )
             }
         },
@@ -470,6 +472,6 @@ private fun ConflictDialog(
                 }
                 TextButton(onClick = onDismiss) { Text(stringResource(R.string.app_conflict_later)) }
             }
-        }
+        },
     )
 }

@@ -68,7 +68,7 @@ import com.hmilyld.weeklyreport.util.Dates
 @Composable
 fun ReportsScreen(
     viewModel: ReportsViewModel,
-    onNotify: (String) -> Unit
+    onNotify: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -107,7 +107,7 @@ fun ReportsScreen(
             // the viewport instead of covering the caret.
             .imePadding()
             .verticalScroll(scrollState)
-            .padding(horizontal = Spacing.lg)
+            .padding(horizontal = Spacing.lg),
     ) {
         ScreenHeader(
             kicker = stringResource(R.string.reports_kicker),
@@ -117,28 +117,28 @@ fun ReportsScreen(
                 IconButton(onClick = viewModel::load, enabled = !state.generating) {
                     Icon(
                         Icons.Outlined.Refresh,
-                        contentDescription = stringResource(R.string.reports_reload)
+                        contentDescription = stringResource(R.string.reports_reload),
                     )
                 }
-            }
+            },
         )
 
         SingleChoiceSegmentedButtonRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = Spacing.md)
+                .padding(top = Spacing.md),
         ) {
             SegmentedButton(
                 selected = state.cadence == ReportCadence.WEEKLY,
                 onClick = { guarded { viewModel.selectCadence(ReportCadence.WEEKLY) } },
                 shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                enabled = !state.generating && !state.saving
+                enabled = !state.generating && !state.saving,
             ) { Text(stringResource(R.string.reports_cadence_weekly)) }
             SegmentedButton(
                 selected = state.cadence == ReportCadence.MONTHLY,
                 onClick = { guarded { viewModel.selectCadence(ReportCadence.MONTHLY) } },
                 shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                enabled = !state.generating && !state.saving
+                enabled = !state.generating && !state.saving,
             ) { Text(stringResource(R.string.reports_cadence_monthly)) }
         }
 
@@ -162,7 +162,7 @@ fun ReportsScreen(
                 stringResource(R.string.reports_this_month)
             },
             modifier = Modifier.padding(top = Spacing.md),
-            enabled = !state.generating && !state.saving
+            enabled = !state.generating && !state.saving,
         )
 
         if (state.offline) {
@@ -170,7 +170,7 @@ fun ReportsScreen(
                 Banner(
                     text = stringResource(R.string.reports_offline_banner),
                     tone = MaterialTheme.colorScheme.secondary,
-                    icon = Icons.Outlined.CloudOff
+                    icon = Icons.Outlined.CloudOff,
                 )
             }
         }
@@ -180,37 +180,37 @@ fun ReportsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.sm),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = stringResource(R.string.reports_body_label, periodName),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
                 TextButton(
                     onClick = viewModel::startEdit,
-                    enabled = !state.generating && !state.saving
+                    enabled = !state.generating && !state.saving,
                 ) {
                     Icon(
                         Icons.Outlined.Edit,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(16.dp),
                     )
                     Text(stringResource(R.string.common_edit), modifier = Modifier.padding(start = Spacing.xs))
                 }
                 TextButton(
                     onClick = { showRegenerateConfirm = true },
-                    enabled = !state.generating
+                    enabled = !state.generating,
                 ) {
                     Icon(
                         Icons.Outlined.AutoAwesome,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(16.dp),
                     )
                     Text(
                         stringResource(R.string.reports_regenerate_action),
-                        modifier = Modifier.padding(start = Spacing.xs)
+                        modifier = Modifier.padding(start = Spacing.xs),
                     )
                 }
             }
@@ -222,18 +222,18 @@ fun ReportsScreen(
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                     Row(
                         modifier = Modifier.padding(top = Spacing.md),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                         Column(modifier = Modifier.padding(start = Spacing.sm)) {
                             Text(
                                 stringResource(R.string.reports_generating_title, periodName),
-                                style = MaterialTheme.typography.titleSmall
+                                style = MaterialTheme.typography.titleSmall,
                             )
                             Text(
                                 stringResource(R.string.reports_generating_hint),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -248,14 +248,14 @@ fun ReportsScreen(
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             Text(
                                 stringResource(R.string.reports_loading, periodName),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(start = Spacing.sm)
+                                modifier = Modifier.padding(start = Spacing.sm),
                             )
                         }
                     }
@@ -269,7 +269,7 @@ fun ReportsScreen(
                                 OutlinedButton(onClick = viewModel::load) {
                                     Text(stringResource(R.string.common_retry))
                                 }
-                            }
+                            },
                         )
                     }
 
@@ -291,14 +291,14 @@ fun ReportsScreen(
                                     Icon(
                                         Icons.Outlined.AutoAwesome,
                                         contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(18.dp),
                                     )
                                     Text(
                                         stringResource(R.string.reports_generate_action, periodName),
-                                        modifier = Modifier.padding(start = Spacing.xs)
+                                        modifier = Modifier.padding(start = Spacing.xs),
                                     )
                                 }
-                            }
+                            },
                         )
                     }
 
@@ -307,22 +307,22 @@ fun ReportsScreen(
                             Text(
                                 text = stringResource(
                                     R.string.reports_generated_at,
-                                    Dates.formatDateTime(state.generatedAt)
+                                    Dates.formatDateTime(state.generatedAt),
                                 ),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
                             )
                             if (state.modelName.isNotBlank()) {
                                 Pill(
                                     text = state.modelName,
-                                    color = MaterialTheme.colorScheme.secondary
+                                    color = MaterialTheme.colorScheme.secondary,
                                 )
                             }
                         }
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = Spacing.md),
-                            color = MaterialTheme.colorScheme.outlineVariant
+                            color = MaterialTheme.colorScheme.outlineVariant,
                         )
 
                         if (state.editing) {
@@ -333,48 +333,48 @@ fun ReportsScreen(
                                     .fillMaxWidth()
                                     .heightIn(min = 280.dp),
                                 textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                    fontFamily = FontFamily.SansSerif
+                                    fontFamily = FontFamily.SansSerif,
                                 ),
                                 minLines = 12,
-                                shape = MaterialTheme.shapes.medium
+                                shape = MaterialTheme.shapes.medium,
                             )
                         } else {
                             SelectionContainer {
                                 Text(
                                     text = state.content,
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                         }
 
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = Spacing.md),
-                            color = MaterialTheme.colorScheme.outlineVariant
+                            color = MaterialTheme.colorScheme.outlineVariant,
                         )
 
                         if (state.editing) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.End,
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 TextButton(
                                     onClick = {
                                         if (state.dirty) showCancelEditConfirm = true else viewModel.cancelEdit()
                                     },
-                                    enabled = !state.saving
+                                    enabled = !state.saving,
                                 ) { Text(stringResource(R.string.common_cancel)) }
                                 Button(
                                     onClick = viewModel::save,
                                     enabled = state.canSave && !state.saving,
-                                    modifier = Modifier.padding(start = Spacing.sm)
+                                    modifier = Modifier.padding(start = Spacing.sm),
                                 ) {
                                     if (state.saving) {
                                         CircularProgressIndicator(
                                             modifier = Modifier.size(16.dp),
                                             strokeWidth = 2.dp,
-                                            color = MaterialTheme.colorScheme.onPrimary
+                                            color = MaterialTheme.colorScheme.onPrimary,
                                         )
                                         Spacer(modifier = Modifier.size(Spacing.sm))
                                     }
@@ -383,7 +383,7 @@ fun ReportsScreen(
                                             stringResource(R.string.common_saving)
                                         } else {
                                             stringResource(R.string.common_save)
-                                        }
+                                        },
                                     )
                                 }
                             }
@@ -391,7 +391,7 @@ fun ReportsScreen(
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 OutlinedButton(
                                     onClick = {
@@ -399,16 +399,16 @@ fun ReportsScreen(
                                         onNotify(copiedLabel)
                                     },
                                     enabled = state.content.isNotBlank(),
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
                                 ) {
                                     Icon(
                                         Icons.Outlined.ContentCopy,
                                         contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(16.dp),
                                     )
                                     Text(
                                         stringResource(R.string.reports_copy),
-                                        modifier = Modifier.padding(start = Spacing.xs)
+                                        modifier = Modifier.padding(start = Spacing.xs),
                                     )
                                 }
                                 Button(
@@ -418,16 +418,16 @@ fun ReportsScreen(
                                         shareText(context, periodName, state.content)
                                     },
                                     enabled = state.content.isNotBlank(),
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
                                 ) {
                                     Icon(
                                         Icons.AutoMirrored.Outlined.Send,
                                         contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(16.dp),
                                     )
                                     Text(
                                         stringResource(R.string.reports_copy_and_share),
-                                        modifier = Modifier.padding(start = Spacing.xs)
+                                        modifier = Modifier.padding(start = Spacing.xs),
                                     )
                                 }
                             }
@@ -445,13 +445,13 @@ fun ReportsScreen(
             body = stringResource(R.string.reports_discard_period_body),
             confirmLabel = stringResource(R.string.reports_discard_period_confirm),
             destructive = true,
-            dismissLabel = stringResource(R.string.common_continue_editing),
+            dismissLabel = R.string.common_continue_editing,
             onConfirm = {
                 pendingAction = null
                 viewModel.cancelEdit()
                 action()
             },
-            onDismiss = { pendingAction = null }
+            onDismiss = { pendingAction = null },
         )
     }
 
@@ -461,12 +461,12 @@ fun ReportsScreen(
             body = stringResource(R.string.reports_cancel_edit_body),
             confirmLabel = stringResource(R.string.common_discard_edits),
             destructive = true,
-            dismissLabel = stringResource(R.string.common_continue_editing),
+            dismissLabel = R.string.common_continue_editing,
             onConfirm = {
                 showCancelEditConfirm = false
                 viewModel.cancelEdit()
             },
-            onDismiss = { showCancelEditConfirm = false }
+            onDismiss = { showCancelEditConfirm = false },
         )
     }
 
@@ -480,7 +480,7 @@ fun ReportsScreen(
                 showRegenerateConfirm = false
                 viewModel.generate()
             },
-            onDismiss = { showRegenerateConfirm = false }
+            onDismiss = { showRegenerateConfirm = false },
         )
     }
 }
@@ -497,6 +497,6 @@ private fun shareText(context: android.content.Context, label: String, content: 
         putExtra(Intent.EXTRA_TEXT, content)
     }
     context.startActivity(
-        Intent.createChooser(send, context.getString(R.string.reports_share_chooser, label))
+        Intent.createChooser(send, context.getString(R.string.reports_share_chooser, label)),
     )
 }

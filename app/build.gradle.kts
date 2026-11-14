@@ -87,23 +87,38 @@ android {
     }
 }
 
-// Formatting is a build concern, not a review concern: ktlint through Spotless
-// sorts imports and normalises whitespace, while still allowing Compose's
-// PascalCase composables. Run `.\gradlew.bat :app:spotlessApply` after edits.
+// The module follows Kotlin's official coding conventions, which it already
+// declares through kotlin.code.style=official: trailing commas on multi-line
+// declarations and calls, ASCII-sorted imports, no wildcard imports. Three rules
+// are turned off because they reflow code without improving it when the line
+// length is unlimited: function-signature (splits every two-parameter
+// signature), chain-method-continuation (moves the first chain call onto its own
+// line) and multiline-expression-wrapping (breaks after `=`). Compose's
+// PascalCase composables are exempt from the naming rule, and the line length
+// stays unlimited because the longest lines left are SQL and JSON literals that
+// cannot be wrapped. Run `.\gradlew.bat :app:spotlessApply` after edits.
+val ktlintStyle = mapOf(
+    "ktlint_code_style" to "ktlint_official",
+    "ktlint_function_naming_ignore_when_annotated_with" to "Composable",
+    "max_line_length" to "off",
+    "ktlint_standard_function-signature" to "disabled",
+    "ktlint_standard_chain-method-continuation" to "disabled",
+    "ktlint_standard_multiline-expression-wrapping" to "disabled",
+    "ktlint_standard_class-signature" to "disabled",
+    "ktlint_standard_parameter-list-wrapping" to "disabled",
+    // Google's Android style guide asks for one ASCII-sorted import list; the
+    // ktlint default groups java/kotlin at the end instead.
+    "ij_kotlin_imports_layout" to "*",
+)
+
 spotless {
     kotlin {
         target("src/**/*.kt")
-        ktlint(libs.versions.ktlint.get()).editorConfigOverride(
-            mapOf(
-                "ktlint_code_style" to "android_studio",
-                "ktlint_function_naming_ignore_when_annotated_with" to "Composable",
-                "max_line_length" to "off",
-            ),
-        )
+        ktlint(libs.versions.ktlint.get()).editorConfigOverride(ktlintStyle)
     }
     kotlinGradle {
         target("*.gradle.kts")
-        ktlint(libs.versions.ktlint.get())
+        ktlint(libs.versions.ktlint.get()).editorConfigOverride(ktlintStyle)
     }
 }
 

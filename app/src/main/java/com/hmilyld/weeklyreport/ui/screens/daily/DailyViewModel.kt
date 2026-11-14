@@ -26,7 +26,7 @@ data class DailyDayUi(
     val content: String,
     val pending: Boolean,
     val deleted: Boolean,
-    val isToday: Boolean
+    val isToday: Boolean,
 ) {
     val body: String get() = ListInput.bodyWithoutMarkers(content).trim()
     val hasRecord: Boolean get() = !deleted && body.isNotEmpty()
@@ -36,7 +36,7 @@ data class EditorState(
     val date: LocalDate,
     val initialContent: String,
     val seeded: Boolean,
-    val hasRecord: Boolean
+    val hasRecord: Boolean,
 )
 
 data class DailyUiState(
@@ -44,7 +44,7 @@ data class DailyUiState(
     val days: List<DailyDayUi> = emptyList(),
     val loading: Boolean = true,
     val offline: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
 ) {
     val weekCount: Int get() = days.count { it.hasRecord }
     val isCurrentWeek: Boolean get() = monday == Dates.mondayOf(LocalDate.now())
@@ -52,7 +52,7 @@ data class DailyUiState(
 
 class DailyViewModel(
     private val repo: DailyRepository,
-    changes: Flow<Long>
+    changes: Flow<Long>,
 ) : ViewModel() {
     private val _state = MutableStateFlow(DailyUiState())
     val state: StateFlow<DailyUiState> = _state.asStateFlow()
@@ -105,7 +105,7 @@ class DailyViewModel(
                 it.copy(
                     loading = false,
                     offline = offline,
-                    error = if (offline) null else error.message
+                    error = if (offline) null else error.message,
                 )
             }
             if (!offline) _messages.emit(UiMessage.Raw(error.message))
@@ -113,7 +113,7 @@ class DailyViewModel(
         loadedOnce = true
     }
 
-    private fun isCurrentRequest(monday: java.time.LocalDate, sequence: Long): Boolean = sequence == loadSequence && _state.value.monday == monday
+    private fun isCurrentRequest(monday: LocalDate, sequence: Long): Boolean = sequence == loadSequence && _state.value.monday == monday
 
     fun previousWeek() {
         _state.update { it.copy(monday = it.monday.minusDays(7)) }
@@ -193,7 +193,7 @@ class DailyViewModel(
             date = date,
             initialContent = if (seeded) ListInput.FIRST_ITEM else content,
             seeded = seeded,
-            hasRecord = hasRecord || cached?.pending == true
+            hasRecord = hasRecord || cached?.pending == true,
         )
     }
 
@@ -209,7 +209,7 @@ class DailyViewModel(
                 content = row?.content.orEmpty(),
                 pending = row?.pending == true,
                 deleted = row?.deleted == true,
-                isToday = date == today
+                isToday = date == today,
             )
         }
     }

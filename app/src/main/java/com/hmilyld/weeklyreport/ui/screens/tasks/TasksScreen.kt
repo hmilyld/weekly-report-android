@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Add
@@ -99,7 +98,7 @@ fun TasksScreen(viewModel: TasksViewModel) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(start = Spacing.lg, end = Spacing.lg, bottom = Spacing.xxl),
-        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
         item {
             ScreenHeader(
@@ -113,11 +112,11 @@ fun TasksScreen(viewModel: TasksViewModel) {
                         } else {
                             Icon(
                                 Icons.Outlined.Refresh,
-                                contentDescription = stringResource(R.string.tasks_refresh)
+                                contentDescription = stringResource(R.string.tasks_refresh),
                             )
                         }
                     }
-                }
+                },
             )
         }
 
@@ -126,7 +125,7 @@ fun TasksScreen(viewModel: TasksViewModel) {
                 Banner(
                     text = stringResource(R.string.tasks_offline_banner),
                     tone = MaterialTheme.colorScheme.secondary,
-                    icon = Icons.Outlined.CloudOff
+                    icon = Icons.Outlined.CloudOff,
                 )
             }
         }
@@ -138,7 +137,7 @@ fun TasksScreen(viewModel: TasksViewModel) {
                         TextButton(onClick = viewModel::refresh) {
                             Text(stringResource(R.string.common_retry))
                         }
-                    }
+                    },
                 )
             }
         }
@@ -154,11 +153,11 @@ fun TasksScreen(viewModel: TasksViewModel) {
                                 Toast.makeText(
                                     context,
                                     context.getString(R.string.tasks_notification_settings_failed),
-                                    Toast.LENGTH_SHORT
+                                    Toast.LENGTH_SHORT,
                                 ).show()
                             }
                         }) { Text(stringResource(R.string.tasks_notification_enable)) }
-                    }
+                    },
                 )
             }
         }
@@ -170,13 +169,13 @@ fun TasksScreen(viewModel: TasksViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.md, bottom = Spacing.xs),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(stringResource(R.string.tasks_active_section), style = MaterialTheme.typography.titleMedium)
                 Text(
                     text = " ${state.active.size}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -187,14 +186,14 @@ fun TasksScreen(viewModel: TasksViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(Spacing.lg),
-                    horizontalArrangement = Arrangement.Center
+                    horizontalArrangement = Arrangement.Center,
                 ) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     Text(
                         stringResource(R.string.tasks_loading),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = Spacing.sm)
+                        modifier = Modifier.padding(start = Spacing.sm),
                     )
                 }
             }
@@ -204,7 +203,7 @@ fun TasksScreen(viewModel: TasksViewModel) {
                     text = stringResource(R.string.tasks_empty_active),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = Spacing.md)
+                    modifier = Modifier.padding(vertical = Spacing.md),
                 )
             }
         } else {
@@ -215,7 +214,7 @@ fun TasksScreen(viewModel: TasksViewModel) {
                     onSaveEdit = { content, deadline, changed ->
                         viewModel.edit(task.localId, content, deadline, changed)
                     },
-                    onDelete = { deleteTarget = task }
+                    onDelete = { deleteTarget = task },
                 )
             }
         }
@@ -223,14 +222,14 @@ fun TasksScreen(viewModel: TasksViewModel) {
         item {
             HorizontalDivider(
                 modifier = Modifier.padding(top = Spacing.lg, bottom = Spacing.sm),
-                color = MaterialTheme.colorScheme.outlineVariant
+                color = MaterialTheme.colorScheme.outlineVariant,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.tasks_completed_section), style = MaterialTheme.typography.titleMedium)
                 Text(
                     text = " ${state.totalCompleted}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -241,7 +240,7 @@ fun TasksScreen(viewModel: TasksViewModel) {
                     text = stringResource(R.string.tasks_empty_completed),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = Spacing.sm)
+                    modifier = Modifier.padding(vertical = Spacing.sm),
                 )
             }
         } else {
@@ -249,7 +248,7 @@ fun TasksScreen(viewModel: TasksViewModel) {
                 CompletedTaskRow(
                     task = task,
                     onRestore = { viewModel.toggle(task.localId) },
-                    onDelete = { deleteTarget = task }
+                    onDelete = { deleteTarget = task },
                 )
             }
             if (state.hasMoreCompleted) {
@@ -258,11 +257,11 @@ fun TasksScreen(viewModel: TasksViewModel) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = Spacing.sm),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         OutlinedButton(
                             onClick = viewModel::loadMoreCompleted,
-                            enabled = !state.loadingMore
+                            enabled = !state.loadingMore,
                         ) {
                             if (state.loadingMore) {
                                 CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
@@ -272,8 +271,8 @@ fun TasksScreen(viewModel: TasksViewModel) {
                                 stringResource(
                                     R.string.tasks_load_more,
                                     state.completed.size,
-                                    state.totalCompleted
-                                )
+                                    state.totalCompleted,
+                                ),
                             )
                         }
                     }
@@ -292,7 +291,7 @@ fun TasksScreen(viewModel: TasksViewModel) {
                 viewModel.delete(task.localId)
                 deleteTarget = null
             },
-            onDismiss = { deleteTarget = null }
+            onDismiss = { deleteTarget = null },
         )
     }
 }
@@ -313,18 +312,18 @@ private fun TaskComposer(onAdd: (String, LocalDate?) -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text(stringResource(R.string.tasks_composer_placeholder)) },
                 singleLine = true,
-                shape = MaterialTheme.shapes.small
+                shape = MaterialTheme.shapes.small,
             )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.sm),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 DeadlineField(
                     date = deadline,
                     onChange = { deadlineIso = it?.let(Dates::iso) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
                 Button(
                     onClick = {
@@ -335,12 +334,12 @@ private fun TaskComposer(onAdd: (String, LocalDate?) -> Unit) {
                         }
                     },
                     enabled = content.isNotBlank(),
-                    modifier = Modifier.padding(start = Spacing.sm)
+                    modifier = Modifier.padding(start = Spacing.sm),
                 ) {
                     Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(
                         stringResource(R.string.tasks_add),
-                        modifier = Modifier.padding(start = Spacing.xs)
+                        modifier = Modifier.padding(start = Spacing.xs),
                     )
                 }
             }
@@ -353,12 +352,15 @@ private fun TaskRow(
     task: LocalTask,
     onToggle: () -> Unit,
     onSaveEdit: (String, LocalDate?, Boolean) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
 ) {
-    var editing by remember(task.localId) { mutableStateOf(false) }
-    var content by remember(task.localId, task.content) { mutableStateOf(task.content) }
-    var deadline by remember(task.localId, task.deadline) { mutableStateOf(Dates.parseIso(task.deadline)) }
-    var deadlineChanged by remember(task.localId) { mutableStateOf(false) }
+    // Editing an existing task survives rotation and tab switches the same way
+    // the composer above does; the deadline itself is stored as ISO text.
+    var editing by rememberSaveable(task.localId) { mutableStateOf(false) }
+    var content by rememberSaveable(task.localId, task.content) { mutableStateOf(task.content) }
+    var deadlineIso by rememberSaveable(task.localId, task.deadline) { mutableStateOf(task.deadline) }
+    var deadlineChanged by rememberSaveable(task.localId) { mutableStateOf(false) }
+    val deadline = Dates.parseIso(deadlineIso)
 
     PaperCard {
         if (editing) {
@@ -368,21 +370,21 @@ private fun TaskRow(
                     onValueChange = { content = it },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text(stringResource(R.string.tasks_field_content)) },
-                    shape = MaterialTheme.shapes.small
+                    shape = MaterialTheme.shapes.small,
                 )
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = Spacing.sm),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     DeadlineField(
                         date = deadline,
                         onChange = {
-                            deadline = it
+                            deadlineIso = it?.let(Dates::iso)
                             deadlineChanged = true
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = {
                         onSaveEdit(content, deadline, deadlineChanged)
@@ -390,18 +392,18 @@ private fun TaskRow(
                     }) {
                         Icon(
                             Icons.Outlined.Check,
-                            contentDescription = stringResource(R.string.common_save)
+                            contentDescription = stringResource(R.string.common_save),
                         )
                     }
                     IconButton(onClick = {
                         content = task.content
-                        deadline = Dates.parseIso(task.deadline)
+                        deadlineIso = task.deadline
                         deadlineChanged = false
                         editing = false
                     }) {
                         Icon(
                             Icons.Outlined.Close,
-                            contentDescription = stringResource(R.string.common_cancel)
+                            contentDescription = stringResource(R.string.common_cancel),
                         )
                     }
                 }
@@ -409,13 +411,13 @@ private fun TaskRow(
         } else {
             Row(
                 modifier = Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.sm),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconToggleButton(checked = false, onCheckedChange = { onToggle() }) {
                     Icon(
                         imageVector = Icons.Outlined.RadioButtonUnchecked,
                         contentDescription = stringResource(R.string.tasks_mark_done),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Column(modifier = Modifier.weight(1f)) {
@@ -423,7 +425,7 @@ private fun TaskRow(
                         text = task.content,
                         style = MaterialTheme.typography.bodyLarge,
                         maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                     DeadlineBadge(task.deadline)
                 }
@@ -432,7 +434,7 @@ private fun TaskRow(
                         Icons.Outlined.Edit,
                         contentDescription = stringResource(R.string.tasks_edit),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
                     )
                 }
                 IconButton(onClick = onDelete) {
@@ -440,7 +442,7 @@ private fun TaskRow(
                         Icons.Outlined.DeleteOutline,
                         contentDescription = stringResource(R.string.tasks_delete),
                         tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }
@@ -452,20 +454,20 @@ private fun TaskRow(
 private fun CompletedTaskRow(
     task: LocalTask,
     onRestore: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f), RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f), MaterialTheme.shapes.medium)
             .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onRestore) {
             Icon(
                 Icons.Filled.CheckCircle,
                 contentDescription = stringResource(R.string.tasks_restore),
-                tint = MaterialTheme.colorScheme.secondary
+                tint = MaterialTheme.colorScheme.secondary,
             )
         }
         Text(
@@ -475,14 +477,14 @@ private fun CompletedTaskRow(
             textDecoration = TextDecoration.LineThrough,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         )
         IconButton(onClick = onDelete) {
             Icon(
                 Icons.Outlined.DeleteOutline,
                 contentDescription = stringResource(R.string.tasks_delete),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(20.dp),
             )
         }
     }
@@ -505,19 +507,19 @@ private fun DeadlineBadge(rawDeadline: String?) {
     }
     Row(
         modifier = Modifier.padding(top = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             Icons.Outlined.CalendarMonth,
             contentDescription = null,
             tint = color,
-            modifier = Modifier.size(13.dp)
+            modifier = Modifier.size(13.dp),
         )
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
             color = color,
-            modifier = Modifier.padding(start = Spacing.xs)
+            modifier = Modifier.padding(start = Spacing.xs),
         )
     }
 }
@@ -529,21 +531,21 @@ private fun dateLabel(context: Context, date: LocalDate): String = context.getSt
 private fun DeadlineField(
     date: LocalDate?,
     onChange: (LocalDate?) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var showPicker by remember { mutableStateOf(false) }
     val context = LocalContext.current
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         FilledTonalButton(
             onClick = { showPicker = true },
-            contentPadding = PaddingValues(horizontal = Spacing.md)
+            contentPadding = PaddingValues(horizontal = Spacing.md),
         ) {
             Icon(Icons.Outlined.CalendarMonth, contentDescription = null, modifier = Modifier.size(16.dp))
             Text(
                 text = date?.let { dateLabel(context, it) }
                     ?: stringResource(R.string.tasks_deadline_set),
                 modifier = Modifier.padding(start = Spacing.xs),
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelLarge,
             )
         }
         if (date != null) {
@@ -551,7 +553,7 @@ private fun DeadlineField(
                 Icon(
                     Icons.Outlined.Close,
                     contentDescription = stringResource(R.string.tasks_deadline_clear),
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(18.dp),
                 )
             }
         }
@@ -563,8 +565,9 @@ private fun DeadlineField(
             initialSelectedDateMillis = date?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli(),
             selectableDates = object : SelectableDates {
                 override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis >= todayUtc
+
                 override fun isSelectableYear(year: Int): Boolean = year >= LocalDate.now().year
-            }
+            },
         )
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
@@ -581,7 +584,7 @@ private fun DeadlineField(
                 TextButton(onClick = { showPicker = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
-            }
+            },
         ) {
             DatePicker(state = pickerState)
         }
