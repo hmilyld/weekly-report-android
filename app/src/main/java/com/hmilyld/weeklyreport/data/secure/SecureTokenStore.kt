@@ -4,6 +4,7 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import androidx.core.content.edit
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -27,9 +28,7 @@ class SecureTokenStore(context: Context) {
             System.arraycopy(iv, 0, it, 0, iv.size)
             System.arraycopy(encrypted, 0, it, iv.size, encrypted.size)
         }
-        prefs.edit()
-            .putString(KEY_PACKED, Base64.encodeToString(packed, Base64.NO_WRAP))
-            .apply()
+        prefs.edit { putString(KEY_PACKED, Base64.encodeToString(packed, Base64.NO_WRAP)) }
     }
 
     fun readToken(): String? {
@@ -53,7 +52,7 @@ class SecureTokenStore(context: Context) {
     fun hasToken(): Boolean = prefs.contains(KEY_PACKED)
 
     fun clear() {
-        prefs.edit().remove(KEY_PACKED).apply()
+        prefs.edit { remove(KEY_PACKED) }
     }
 
     private fun key(): SecretKey {

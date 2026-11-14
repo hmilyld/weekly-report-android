@@ -2,6 +2,7 @@ package com.hmilyld.weeklyreport.data.prefs
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,35 +37,35 @@ class SettingsStore(context: Context) {
     fun serverBaseValue(): String = _serverBase.value
 
     fun setServerBase(baseUrl: String) {
-        prefs.edit().putString(KEY_SERVER_BASE, baseUrl).apply()
+        prefs.edit { putString(KEY_SERVER_BASE, baseUrl) }
         _serverBase.value = baseUrl
     }
 
     fun setTheme(mode: ThemeMode) {
-        prefs.edit().putString(KEY_THEME, mode.value).apply()
+        prefs.edit { putString(KEY_THEME, mode.value) }
         _theme.value = mode
     }
 
     fun setBiometricEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_BIOMETRIC, enabled).apply()
+        prefs.edit { putBoolean(KEY_BIOMETRIC, enabled) }
         _biometricEnabled.value = enabled
     }
 
     fun setLastUsername(username: String) {
-        prefs.edit().putString(KEY_LAST_USERNAME, username).apply()
+        prefs.edit { putString(KEY_LAST_USERNAME, username) }
         _lastUsername.value = username
     }
 
     fun lastDeadlineNoticeDay(): String = prefs.getString(KEY_LAST_DEADLINE_NOTICE, "").orEmpty()
 
     fun setLastDeadlineNoticeDay(day: String) {
-        prefs.edit().putString(KEY_LAST_DEADLINE_NOTICE, day).apply()
+        prefs.edit { putString(KEY_LAST_DEADLINE_NOTICE, day) }
     }
 
     fun lastLoginProblem(): String = prefs.getString(KEY_LOGIN_PROBLEM, "").orEmpty()
 
     fun setLoginProblem(message: String?) {
-        prefs.edit().putString(KEY_LOGIN_PROBLEM, message.orEmpty()).apply()
+        prefs.edit { putString(KEY_LOGIN_PROBLEM, message.orEmpty()) }
     }
 
     companion object {
