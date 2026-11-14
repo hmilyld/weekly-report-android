@@ -35,6 +35,12 @@ data class ReportUiState(
     val draft: String = "",
 ) {
     val dirty: Boolean get() = editing && draft != content
+    val periodKey: String
+        get() = if (cadence == ReportCadence.WEEKLY) {
+            "W:${Dates.iso(monday)}"
+        } else {
+            "M:$year-$month"
+        }
     val isCurrentPeriod: Boolean
         get() = if (cadence == ReportCadence.WEEKLY) {
             monday == Dates.mondayOf(LocalDate.now())
@@ -59,12 +65,14 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
     }
 
     fun selectCadence(cadence: ReportCadence) {
+        if (_state.value.generating || _state.value.saving) return
         if (_state.value.cadence == cadence) return
         _state.update { it.copy(cadence = cadence, editing = false, draft = "") }
         load()
     }
 
     fun previous() {
+        if (_state.value.generating || _state.value.saving) return
         _state.update {
             if (it.cadence == ReportCadence.WEEKLY) {
                 it.copy(monday = it.monday.minusDays(7))
@@ -77,6 +85,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
     }
 
     fun next() {
+        if (_state.value.generating || _state.value.saving) return
         _state.update {
             if (it.cadence == ReportCadence.WEEKLY) {
                 it.copy(monday = it.monday.plusDays(7))
@@ -89,6 +98,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
     }
 
     fun current() {
+        if (_state.value.generating || _state.value.saving) return
         val now = LocalDate.now()
         _state.update {
             if (it.cadence == ReportCadence.WEEKLY) {
@@ -161,7 +171,8 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
 
     fun generate() {
         val state = _state.value
-        if (state.generating) return
+        if (state.generating || state.saving) return
+        val requestPeriod = state.periodKey
         viewModelScope.launch {
             _state.update { it.copy(generating = true, error = null) }
             try {
@@ -179,6 +190,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
                     modelName = report.modelName
                     generatedAt = report.generatedAt
                 }
+                if (_state.value.periodKey != requestPeriod) return@launch
                 applyReport(content, modelName, generatedAt)
                 _state.update { it.copy(notGenerated = false) }
                 _messages.emit(if (state.cadence == ReportCadence.WEEKLY) "周报已生成" else "月报已生成")
@@ -194,6 +206,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
     }
 
     fun startEdit() {
+        if (_state.value.generating || _state.value.saving) return
         _state.update { it.copy(editing = true, draft = it.content) }
     }
 
@@ -207,7 +220,8 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
 
     fun save() {
         val state = _state.value
-        if (!state.canSave || state.saving) return
+        if (!state.canSave || state.saving || state.generating) return
+        val requestPeriod = state.periodKey
         viewModelScope.launch {
             _state.update { it.copy(saving = true) }
             try {
@@ -225,6 +239,7 @@ class ReportsViewModel(private val repo: ReportRepository) : ViewModel() {
                     modelName = report.modelName
                     generatedAt = report.generatedAt
                 }
+                if (_state.value.periodKey != requestPeriod) return@launch
                 applyReport(content, modelName, generatedAt)
                 _state.update { it.copy(editing = false, draft = "") }
                 _messages.emit("已保存")

@@ -77,6 +77,7 @@ fun ReportsScreen(
     var showCancelEditConfirm by remember { mutableStateOf(false) }
 
     fun guarded(action: () -> Unit) {
+        if (state.generating || state.saving) return
         if (state.dirty) pendingAction = action else action()
     }
 
@@ -117,13 +118,13 @@ fun ReportsScreen(
                 selected = state.cadence == ReportCadence.WEEKLY,
                 onClick = { guarded { viewModel.selectCadence(ReportCadence.WEEKLY) } },
                 shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                enabled = !state.generating,
+                enabled = !state.generating && !state.saving,
             ) { Text("周报") }
             SegmentedButton(
                 selected = state.cadence == ReportCadence.MONTHLY,
                 onClick = { guarded { viewModel.selectCadence(ReportCadence.MONTHLY) } },
                 shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                enabled = !state.generating,
+                enabled = !state.generating && !state.saving,
             ) { Text("月报") }
         }
 
@@ -137,6 +138,7 @@ fun ReportsScreen(
             },
             todayLabel = if (state.cadence == ReportCadence.WEEKLY) "回到本周" else "回到本月",
             modifier = Modifier.padding(top = Spacing.md),
+            enabled = !state.generating && !state.saving,
         )
 
         if (state.offline) {
@@ -162,7 +164,10 @@ fun ReportsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f),
                 )
-                TextButton(onClick = viewModel::startEdit) {
+                TextButton(
+                    onClick = viewModel::startEdit,
+                    enabled = !state.generating && !state.saving,
+                ) {
                     Icon(
                         Icons.Outlined.Edit,
                         contentDescription = null,

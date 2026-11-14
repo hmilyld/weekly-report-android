@@ -29,6 +29,7 @@ fun PeriodNavigator(
     onToday: (() -> Unit)?,
     todayLabel: String,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         PaperCard {
@@ -36,7 +37,7 @@ fun PeriodNavigator(
                 modifier = Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.sm),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onPrevious) {
+                IconButton(onClick = onPrevious, enabled = enabled) {
                     Icon(Icons.Outlined.ChevronLeft, contentDescription = "上一周期")
                 }
                 Column(
@@ -55,7 +56,7 @@ fun PeriodNavigator(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                IconButton(onClick = onNext) {
+                IconButton(onClick = onNext, enabled = enabled) {
                     Icon(Icons.Outlined.ChevronRight, contentDescription = "下一周期")
                 }
             }
@@ -67,7 +68,7 @@ fun PeriodNavigator(
                     .padding(top = Spacing.xs),
                 horizontalArrangement = Arrangement.End,
             ) {
-                TextButton(onClick = onToday) {
+                TextButton(onClick = onToday, enabled = enabled) {
                     Icon(
                         Icons.Outlined.Today,
                         contentDescription = null,
