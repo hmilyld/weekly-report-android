@@ -106,6 +106,7 @@ AppDatabase (SQLite) ──► outbox ──► SyncEngine ──► ApiClient
 - 页面标题统一使用 `ui/components/Common.kt` 的 `ScreenHeader`。它的 kicker 行固定最小高度 `48dp`，以确保有/无右侧操作按钮的页面标题对齐；不要改回自适应高度。
 - 设计语言：暖纸色 + 墨色 + 朱红强调色；标题衬线体，正文无衬线；间距使用 `Spacing`。
 - 设置页的多个操作按钮使用 `FlowRow`（每行最多 2 个）并让文字单行，避免窄屏竖排断字。
+- 通知权限入口统一走 `NotificationPermission.openSettings`（系统通知设置页），不要改回 `RequestPermission`：部分 MIUI/HyperOS 运行时弹窗会直接失败或关闭应用；返回时通过 `ON_RESUME` 重新检查权限。
 - 所有可点击元素至少 48dp；破坏性操作必须二次确认。
 
 ### 4.6 列表输入与中文 IME

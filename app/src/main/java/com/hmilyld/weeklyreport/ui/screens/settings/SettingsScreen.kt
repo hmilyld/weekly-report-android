@@ -1,12 +1,6 @@
 package com.hmilyld.weeklyreport.ui.screens.settings
 
-import android.Manifest
-import android.content.ActivityNotFoundException
-import android.content.Intent
 import android.os.Build
-import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -64,6 +58,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.hmilyld.weeklyreport.BuildConfig
 import com.hmilyld.weeklyreport.data.prefs.ThemeMode
+import com.hmilyld.weeklyreport.notifications.NotificationPermission
 import com.hmilyld.weeklyreport.notifications.TaskNotifier
 import com.hmilyld.weeklyreport.ui.BiometricUi
 import com.hmilyld.weeklyreport.ui.components.PaperCard
@@ -86,28 +81,7 @@ fun SettingsScreen(
     var showPasswordDialog by remember { mutableStateOf(false) }
     var showLogoutConfirm by remember { mutableStateOf(false) }
     var notificationsGranted by remember { mutableStateOf(TaskNotifier.hasPermission(context)) }
-    var notificationRequestDenied by remember { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
-    val notificationSettingsLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult(),
-    ) {
-        // Coming back from system settings: refresh the real state.
-        notificationsGranted = TaskNotifier.hasPermission(context)
-        if (notificationsGranted) notificationRequestDenied = false
-    }
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { granted ->
-        notificationsGranted = granted
-        notificationRequestDenied = !granted
-        onNotify(
-            if (granted) {
-                "通知权限已开启"
-            } else {
-                "通知权限未开启；可点「打开通知设置」手动允许"
-            },
-        )
-    }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -117,23 +91,6 @@ fun SettingsScreen(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    fun openNotificationSettings() {
-        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        try {
-            notificationSettingsLauncher.launch(intent)
-        } catch (error: ActivityNotFoundException) {
-            notificationSettingsLauncher.launch(
-                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = android.net.Uri.parse("package:${context.packageName}")
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                },
-            )
-        }
     }
 
     Column(
@@ -378,17 +335,11 @@ fun SettingsScreen(
             ) {
                 if (!notificationsGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     OutlinedButton(onClick = {
-                        if (notificationRequestDenied) {
-                            openNotificationSettings()
-                        } else {
-                            onNotify("请在系统弹窗中允许通知")
-                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        if (!NotificationPermission.openSettings(context)) {
+                            onNotify("无法打开系统通知设置，请手动在系统设置中允许通知")
                         }
                     }) {
-                        Text(
-                            text = if (notificationRequestDenied) "通知设置" else "允许通知",
-                            maxLines = 1,
-                        )
+                        Text("开启通知", maxLines = 1)
                     }
                 }
                 OutlinedButton(onClick = viewModel::checkReminders) {
@@ -404,9 +355,9 @@ fun SettingsScreen(
                     Text("添加小部件", modifier = Modifier.padding(start = Spacing.xs), maxLines = 1)
                 }
             }
-            if (!notificationsGranted && notificationRequestDenied) {
+            if (!notificationsGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 Text(
-                    text = "系统未弹出授权框时，请点「通知设置」手动允许。",
+                    text = "点击「开启通知」后，在本应用的通知设置页打开开关；返回后会自动刷新状态。",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = Spacing.xs),

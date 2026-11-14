@@ -1,9 +1,7 @@
 package com.hmilyld.weeklyreport.ui.screens.tasks
 
-import android.Manifest
 import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,7 +59,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.hmilyld.weeklyreport.data.local.LocalTask
+import com.hmilyld.weeklyreport.notifications.NotificationPermission
 import com.hmilyld.weeklyreport.notifications.TaskNotifier
 import com.hmilyld.weeklyreport.ui.components.Banner
 import com.hmilyld.weeklyreport.ui.components.PaperCard
@@ -79,9 +82,17 @@ fun TasksScreen(viewModel: TasksViewModel) {
     val context = LocalContext.current
     var notificationsGranted by remember { mutableStateOf(TaskNotifier.hasPermission(context)) }
     var deleteTarget by remember { mutableStateOf<LocalTask?>(null) }
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { granted -> notificationsGranted = granted }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                notificationsGranted = TaskNotifier.hasPermission(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -132,8 +143,14 @@ fun TasksScreen(viewModel: TasksViewModel) {
                     icon = Icons.Outlined.NotificationsNone,
                     action = {
                         TextButton(onClick = {
-                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        }) { Text("允许") }
+                            if (!NotificationPermission.openSettings(context)) {
+                                Toast.makeText(
+                                    context,
+                                    "无法打开系统通知设置，请手动在系统设置中允许",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            }
+                        }) { Text("开启") }
                     },
                 )
             }
