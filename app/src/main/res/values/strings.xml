@@ -5,4 +5,228 @@
     <string name="widget_description">在主屏查看今天记录，一点直达编辑。</string>
     <string name="widget_empty">今天还没有记录，点这里写一条。</string>
     <string name="widget_action">记一笔</string>
+    <string name="widget_date_header">周记 · %1$d月%2$d日 %3$s</string>
+
+    <!-- Shared UI text -->
+    <string name="common_cancel">取消</string>
+    <string name="common_confirm">确定</string>
+    <string name="common_delete">删除</string>
+    <string name="common_edit">编辑</string>
+    <string name="common_retry">重试</string>
+    <string name="common_save">保存</string>
+    <string name="common_saving">保存中</string>
+    <string name="common_continue_editing">继续编辑</string>
+    <string name="common_discard_edits">放弃修改</string>
+    <string name="common_discard_unsaved_title">放弃未保存的修改？</string>
+    <string name="common_this_week">回到本周</string>
+    <string name="common_test_connection">测试连接</string>
+    <string name="common_server_address">服务器地址</string>
+    <string name="common_previous_period">上一周期</string>
+    <string name="common_next_period">下一周期</string>
+
+    <!-- App root: navigation, queue banners, conflict dialog -->
+    <string name="app_tab_daily">日报</string>
+    <string name="app_tab_tasks">待办</string>
+    <string name="app_tab_reports">报告</string>
+    <string name="app_tab_settings">设置</string>
+    <string name="app_biometric_unlock_title">解锁周记</string>
+    <string name="app_banner_conflict_count">有 %1$d 条离线修改与服务器冲突，需要你确认后才覆盖。</string>
+    <string name="app_banner_failed_count">%1$d 条修改发送失败，已保留在本机。</string>
+    <string name="app_banner_pending_count">%1$d 条修改待发送，联网后按顺序补发。</string>
+    <string name="app_banner_action">处理</string>
+    <string name="app_conflict_local_delete">本地：删除这一天的记录</string>
+    <string name="app_conflict_local_text">本地：%1$s</string>
+    <string name="app_conflict_server_text">服务器：%1$s</string>
+    <string name="app_conflict_blank">（空白）</string>
+    <string name="app_conflict_title">%1$s 有冲突</string>
+    <string name="app_conflict_body">这一天的记录在离线期间被服务器更新过（还剩 %1$d 条冲突）。为避免静默覆盖，需要你选择保留哪一版。</string>
+    <string name="app_conflict_overwrite">用本地覆盖</string>
+    <string name="app_conflict_keep_server">保留服务器版本</string>
+    <string name="app_conflict_later">稍后</string>
+
+    <!-- Daily screen -->
+    <string name="daily_kicker">日报 · DAILY</string>
+    <string name="daily_title">一周的记录</string>
+    <string name="daily_subtitle">点任意一天补记进展；一周写成几行，周报就有素材。</string>
+    <string name="daily_refresh_week">刷新本周</string>
+    <string name="daily_week_caption">已记 %1$d 天 · 周一为周首</string>
+    <string name="daily_offline_banner">离线：显示本机缓存；新修改会先保存在本机，联网后按顺序发送。</string>
+    <string name="daily_loading">正在读取本周日报…</string>
+    <string name="daily_empty_hint">这一周还没有记录。挑一天，从「1. 」开始写。</string>
+    <string name="daily_pill_today">今天</string>
+    <string name="daily_row_deleted">这条记录将被删除</string>
+    <string name="daily_row_empty">还没有记录，点这里补记</string>
+    <string name="daily_pill_pending_delete">待删除</string>
+    <string name="daily_pill_pending_sync">待同步</string>
+    <string name="daily_editor_title_edit">编辑日报</string>
+    <string name="daily_editor_title_new">记录这一天的进展</string>
+    <string name="daily_editor_placeholder">今天做了什么？一两句就够，比如：修了导出 CSV 的日期偏移。</string>
+    <string name="daily_editor_hint_empty">回车自动续号；空条目回车结束列表</string>
+    <string name="daily_editor_char_count">%1$d 字</string>
+    <string name="daily_discard_body">这一天的内容还没有保存，离开后会丢失这次修改。</string>
+    <string name="daily_delete_title">删除这条日报？</string>
+    <string name="daily_delete_body">%1$s 的记录将被删除，删除后无法恢复。</string>
+
+    <!-- Component previews -->
+    <string name="previews_today_progress">今天的进展</string>
+    <string name="previews_refresh">刷新</string>
+
+    <!-- Tasks screen -->
+    <string name="tasks_kicker">待办 · TASKS</string>
+    <string name="tasks_title">要做的事</string>
+    <string name="tasks_subtitle">按截止日期排序；逾期和三天内到期会标出来。</string>
+    <string name="tasks_refresh">刷新待办</string>
+    <string name="tasks_offline_banner">离线：显示本机缓存，新待办会在联网后按顺序补发。</string>
+    <string name="tasks_notification_banner">允许通知后，逾期和临期待办会在本机提醒。</string>
+    <string name="tasks_notification_settings_failed">无法打开系统通知设置，请手动在系统设置中允许</string>
+    <string name="tasks_notification_enable">开启</string>
+    <string name="tasks_active_section">未完成</string>
+    <string name="tasks_loading">正在读取待办…</string>
+    <string name="tasks_empty_active">没有未完成的待办。上面写一条，回车或点「添加」就记下了。</string>
+    <string name="tasks_completed_section">已完成</string>
+    <string name="tasks_empty_completed">还没有完成的待办。</string>
+    <string name="tasks_load_more">加载更多（%1$d/%2$d）</string>
+    <string name="tasks_delete_title">删除这条待办？</string>
+    <string name="tasks_delete_body">「%1$s」将被删除，删除后无法恢复。</string>
+    <string name="tasks_composer_placeholder">下一条要做的事</string>
+    <string name="tasks_add">添加</string>
+    <string name="tasks_field_content">待办内容</string>
+    <string name="tasks_mark_done">标记为已完成</string>
+    <string name="tasks_edit">编辑待办</string>
+    <string name="tasks_delete">删除待办</string>
+    <string name="tasks_restore">恢复为未完成</string>
+    <string name="tasks_deadline_overdue">已逾期 · %1$s</string>
+    <string name="tasks_deadline_urgent">即将到期 · %1$s</string>
+    <string name="tasks_deadline_date">%1$d月%2$d日</string>
+    <string name="tasks_deadline_set">截止日期</string>
+    <string name="tasks_deadline_clear">清除截止日期</string>
+
+    <!-- Deadline notifications -->
+    <string name="tasks_notification_name">待办到期提醒</string>
+    <string name="tasks_notification_channel_desc">逾期和三天内到期的本地提醒</string>
+    <string name="tasks_notification_summary_overdue">%1$d 项已逾期</string>
+    <string name="tasks_notification_summary_urgent">%1$d 项三天内到期</string>
+    <string name="tasks_notification_summary_both">%1$d 项已逾期，%2$d 项三天内到期</string>
+    <string name="tasks_notification_title">待办提醒 · %1$s</string>
+    <string name="tasks_notification_detail">· [%1$s] %2$s（%3$d月%4$d日）</string>
+    <string name="tasks_notification_prefix_overdue">已逾期</string>
+    <string name="tasks_notification_prefix_urgent">临期</string>
+
+    <!-- Reports screen -->
+    <string name="reports_kicker">报告 · REPORTS</string>
+    <string name="reports_title">写成一页</string>
+    <string name="reports_subtitle">从日报自动汇总；生成后仍可编辑、复制并交给系统分享面板。</string>
+    <string name="reports_reload">重新读取</string>
+    <string name="reports_cadence_weekly">周报</string>
+    <string name="reports_cadence_monthly">月报</string>
+    <string name="reports_caption_weekly">周一至周日</string>
+    <string name="reports_caption_monthly">自然月</string>
+    <string name="reports_this_month">回到本月</string>
+    <string name="reports_offline_banner">离线：显示上次读取的缓存；生成和保存需要联网。</string>
+    <string name="reports_body_label">%1$s正文</string>
+    <string name="reports_regenerate_action">重新生成</string>
+    <string name="reports_generating_title">正在生成%1$s…</string>
+    <string name="reports_generating_hint">服务器正在调用 LLM，可能需要几十秒，请保持页面打开。</string>
+    <string name="reports_loading">正在读取%1$s…</string>
+    <string name="reports_load_failed">读取失败</string>
+    <string name="reports_empty_weekly_title">还没有周报</string>
+    <string name="reports_empty_monthly_title">还没有月报</string>
+    <string name="reports_empty_weekly_desc">先在「日报」里补几条本周记录，再回来生成。</string>
+    <string name="reports_empty_monthly_desc">先在「日报」里补全本月记录，再回来生成。</string>
+    <string name="reports_generate_action">生成%1$s</string>
+    <string name="reports_generated_at">生成于 %1$s</string>
+    <string name="reports_copied">已复制%1$s</string>
+    <string name="reports_copied_sharing">已复制，正在打开系统分享面板</string>
+    <string name="reports_copy">复制</string>
+    <string name="reports_copy_and_share">复制并分享</string>
+    <string name="reports_discard_period_body">切换周期会丢失当前编辑内容。</string>
+    <string name="reports_discard_period_confirm">放弃并切换</string>
+    <string name="reports_cancel_edit_body">退出编辑后会丢失这次修改。</string>
+    <string name="reports_regenerate_title">重新生成%1$s？</string>
+    <string name="reports_regenerate_body">服务器会再次调用 LLM 并覆盖当前内容，手工修改也会被覆盖。</string>
+    <string name="reports_share_subject">周记 %1$s</string>
+    <string name="reports_share_chooser">分享%1$s</string>
+
+    <!-- Settings screen -->
+    <string name="settings_kicker">设置 · SETTINGS</string>
+    <string name="settings_title">这本周记</string>
+    <string name="settings_subtitle">服务器、账号、外观，以及手机端独有的提醒和小部件。</string>
+    <string name="settings_section_server">服务器</string>
+    <string name="settings_server_current">当前地址：%1$s</string>
+    <string name="settings_server_unset">未设置</string>
+    <string name="settings_server_hint_debug">调试版允许局域网 HTTP；正式版仅允许 HTTPS。修改地址后会退出登录。</string>
+    <string name="settings_server_hint_release">正式版仅允许 HTTPS；修改地址后会退出登录。</string>
+    <string name="settings_save_and_relogin">保存并重新登录</string>
+    <string name="settings_section_account">账号</string>
+    <string name="settings_reading">正在读取…</string>
+    <string name="settings_current_user">当前登录用户</string>
+    <string name="settings_role_admin">管理员</string>
+    <string name="settings_role_user">普通用户</string>
+    <string name="settings_refresh_account">刷新账号</string>
+    <string name="settings_change_password">修改密码</string>
+    <string name="settings_logout">退出登录</string>
+    <string name="settings_section_appearance">外观</string>
+    <string name="settings_theme">主题</string>
+    <string name="settings_theme_system">跟随系统</string>
+    <string name="settings_theme_light">浅色</string>
+    <string name="settings_theme_dark">深色</string>
+    <string name="settings_section_security">安全</string>
+    <string name="settings_biometric_title">生物识别解锁</string>
+    <string name="settings_biometric_desc">已保存的会话需要指纹或面容才能进入；令牌只保存在 Android Keystore。</string>
+    <string name="settings_biometric_unavailable">此设备没有可用的生物识别，请先在系统设置中录入指纹</string>
+    <string name="settings_biometric_prompt_title">开启生物识别解锁</string>
+    <string name="settings_biometric_prompt_subtitle">验证一次，之后打开周记需要指纹或面容</string>
+    <string name="settings_section_reminders">提醒与小部件</string>
+    <string name="settings_notifications_desc">逾期和三天内到期的待办由本机通知提醒，不依赖网页。</string>
+    <string name="settings_notifications_granted">已允许</string>
+    <string name="settings_notifications_settings_failed">无法打开系统通知设置，请手动在系统设置中允许通知</string>
+    <string name="settings_notifications_enable">开启通知</string>
+    <string name="settings_check_reminders">检查提醒</string>
+    <string name="settings_add_widget">添加小部件</string>
+    <string name="settings_notifications_hint">点击「开启通知」后，在本应用的通知设置页打开开关；返回后会自动刷新状态。</string>
+    <string name="settings_section_queue">离线队列</string>
+    <string name="settings_queue_title">待发送与冲突</string>
+    <string name="settings_queue_summary">待发送 %1$d 条 · 冲突 %2$d 条</string>
+    <string name="settings_queue_summary_failed">待发送 %1$d 条 · 冲突 %2$d 条 · 失败 %3$d 条</string>
+    <string name="settings_retry_now">立即重试</string>
+    <string name="settings_queue_conflict_hint">有冲突的日报不会自动覆盖服务器；请在页面顶部的提示里逐条选择。</string>
+    <string name="settings_queue_failed_hint">发送失败的修改仍保存在本机。检查内容后点「立即重试」，或重新编辑该项。</string>
+    <string name="settings_about">关于</string>
+    <string name="settings_version">周记 %1$s（构建 %2$d）</string>
+    <string name="settings_about_desc">数据保存在你的自托管服务器；本机只缓存日报草稿、待办和待发送队列。明文密码从不落盘。</string>
+    <string name="settings_logout_title">退出登录？</string>
+    <string name="settings_logout_body">本机未发送的草稿会保留，下次登录同一账号后继续发送。</string>
+    <string name="settings_logout_confirm">退出</string>
+    <string name="settings_password_intro">修改成功后，服务端会用新密码重新加密全部内容，其他设备需要重新登录。</string>
+    <string name="settings_password_current">当前密码</string>
+    <string name="settings_password_new">新密码（至少 8 位，含字母和数字）</string>
+    <string name="settings_password_confirm">再次输入新密码</string>
+
+    <!-- Login screen -->
+    <string name="login_kicker">周记 · WEEKLY LOG</string>
+    <string name="login_title">把这一周写下来</string>
+    <string name="login_subtitle">自己的服务器，自己的记录。登录后可以离线写日报和待办，联网时按顺序补发。</string>
+    <string name="login_server_label_required">服务器地址（首次必填）</string>
+    <string name="login_server_hint">正式版仅支持 HTTPS；调试版可用局域网 HTTP</string>
+    <string name="login_username">用户名</string>
+    <string name="login_password">密码</string>
+    <string name="login_hide_password">隐藏密码</string>
+    <string name="login_show_password">显示密码</string>
+    <string name="login_action">登录</string>
+    <string name="login_footer">密码只用于换取登录令牌，不会保存在设备上；令牌由 Android Keystore 加密。</string>
+
+    <!-- Lock screen -->
+    <string name="lock_title">周记已锁定</string>
+    <string name="lock_subtitle_saved_session">使用已保存的会话</string>
+    <string name="lock_subtitle_username">已保存 %1$s 的登录状态</string>
+    <string name="lock_unlock_action">使用指纹 / 面容解锁</string>
+    <string name="lock_no_biometric">此设备没有可用的生物识别，或尚未录入指纹。</string>
+    <string name="lock_login_with_password">使用账号密码登录</string>
+    <string name="lock_footer">令牌保存在 Android Keystore 中，解锁后才载入内存。</string>
+
+    <!-- Biometric prompt -->
+    <string name="biometric_unavailable">无法打开生物识别</string>
+    <string name="biometric_canceled">已取消生物识别</string>
+    <string name="biometric_locked_out">尝试次数过多，请稍后再试</string>
+    <string name="biometric_not_enrolled">设备尚未录入指纹或面容</string>
 </resources>

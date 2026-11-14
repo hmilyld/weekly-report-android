@@ -49,7 +49,12 @@ class TodayWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.widget_today)
             views.setTextViewText(
                 R.id.widget_date,
-                "周记 · ${today.monthValue}月${today.dayOfMonth}日 ${Dates.weekdayShort(today)}",
+                context.getString(
+                    R.string.widget_date_header,
+                    today.monthValue,
+                    today.dayOfMonth,
+                    Dates.weekdayShort(today),
+                ),
             )
             val app = context.applicationContext as? WeeklyReportApp
             val cached = app?.container?.db?.dailyByDate(Dates.iso(today))

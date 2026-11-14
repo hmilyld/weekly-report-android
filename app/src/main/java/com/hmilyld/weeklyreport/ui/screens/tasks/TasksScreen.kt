@@ -1,5 +1,6 @@
 package com.hmilyld.weeklyreport.ui.screens.tasks
 
+import android.content.Context
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -27,7 +28,6 @@ import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -37,6 +37,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -50,22 +51,24 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.hmilyld.weeklyreport.R
 import com.hmilyld.weeklyreport.data.local.LocalTask
 import com.hmilyld.weeklyreport.notifications.NotificationPermission
 import com.hmilyld.weeklyreport.notifications.TaskNotifier
 import com.hmilyld.weeklyreport.ui.components.Banner
+import com.hmilyld.weeklyreport.ui.components.ConfirmDialog
 import com.hmilyld.weeklyreport.ui.components.PaperCard
 import com.hmilyld.weeklyreport.ui.components.Pill
 import com.hmilyld.weeklyreport.ui.components.ScreenHeader
@@ -101,15 +104,18 @@ fun TasksScreen(viewModel: TasksViewModel) {
     ) {
         item {
             ScreenHeader(
-                kicker = "待办 · TASKS",
-                title = "要做的事",
-                subtitle = "按截止日期排序；逾期和三天内到期会标出来。",
+                kicker = stringResource(R.string.tasks_kicker),
+                title = stringResource(R.string.tasks_title),
+                subtitle = stringResource(R.string.tasks_subtitle),
                 trailing = {
                     IconButton(onClick = viewModel::refresh, enabled = !state.refreshing) {
                         if (state.refreshing) {
                             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                         } else {
-                            Icon(Icons.Outlined.Refresh, contentDescription = "刷新待办")
+                            Icon(
+                                Icons.Outlined.Refresh,
+                                contentDescription = stringResource(R.string.tasks_refresh),
+                            )
                         }
                     }
                 },
@@ -119,7 +125,7 @@ fun TasksScreen(viewModel: TasksViewModel) {
         if (state.offline) {
             item {
                 Banner(
-                    text = "离线：显示本机缓存，新待办会在联网后按顺序补发。",
+                    text = stringResource(R.string.tasks_offline_banner),
                     tone = MaterialTheme.colorScheme.secondary,
                     icon = Icons.Outlined.CloudOff,
                 )
@@ -130,7 +136,9 @@ fun TasksScreen(viewModel: TasksViewModel) {
                 Banner(
                     text = state.error.orEmpty(),
                     action = {
-                        TextButton(onClick = viewModel::refresh) { Text("重试") }
+                        TextButton(onClick = viewModel::refresh) {
+                            Text(stringResource(R.string.common_retry))
+                        }
                     },
                 )
             }
@@ -138,7 +146,7 @@ fun TasksScreen(viewModel: TasksViewModel) {
         if (!notificationsGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             item {
                 Banner(
-                    text = "允许通知后，逾期和临期待办会在本机提醒。",
+                    text = stringResource(R.string.tasks_notification_banner),
                     tone = MaterialTheme.colorScheme.secondary,
                     icon = Icons.Outlined.NotificationsNone,
                     action = {
@@ -146,11 +154,11 @@ fun TasksScreen(viewModel: TasksViewModel) {
                             if (!NotificationPermission.openSettings(context)) {
                                 Toast.makeText(
                                     context,
-                                    "无法打开系统通知设置，请手动在系统设置中允许",
+                                    context.getString(R.string.tasks_notification_settings_failed),
                                     Toast.LENGTH_SHORT,
                                 ).show()
                             }
-                        }) { Text("开启") }
+                        }) { Text(stringResource(R.string.tasks_notification_enable)) }
                     },
                 )
             }
@@ -165,7 +173,7 @@ fun TasksScreen(viewModel: TasksViewModel) {
                     .padding(top = Spacing.md, bottom = Spacing.xs),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("未完成", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.tasks_active_section), style = MaterialTheme.typography.titleMedium)
                 Text(
                     text = " ${state.active.size}",
                     style = MaterialTheme.typography.labelSmall,
@@ -184,7 +192,7 @@ fun TasksScreen(viewModel: TasksViewModel) {
                 ) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     Text(
-                        "正在读取待办…",
+                        stringResource(R.string.tasks_loading),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = Spacing.sm),
@@ -194,14 +202,14 @@ fun TasksScreen(viewModel: TasksViewModel) {
         } else if (state.active.isEmpty()) {
             item {
                 Text(
-                    text = "没有未完成的待办。上面写一条，回车或点「添加」就记下了。",
+                    text = stringResource(R.string.tasks_empty_active),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = Spacing.md),
                 )
             }
         } else {
-            items(state.active, key = { it.localId }) { task ->
+            items(state.active, key = { it.localId }, contentType = { "active" }) { task ->
                 TaskRow(
                     task = task,
                     onToggle = { viewModel.toggle(task.localId) },
@@ -219,7 +227,7 @@ fun TasksScreen(viewModel: TasksViewModel) {
                 color = MaterialTheme.colorScheme.outlineVariant,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("已完成", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.tasks_completed_section), style = MaterialTheme.typography.titleMedium)
                 Text(
                     text = " ${state.totalCompleted}",
                     style = MaterialTheme.typography.labelSmall,
@@ -231,14 +239,14 @@ fun TasksScreen(viewModel: TasksViewModel) {
         if (state.completed.isEmpty()) {
             item {
                 Text(
-                    text = "还没有完成的待办。",
+                    text = stringResource(R.string.tasks_empty_completed),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = Spacing.sm),
                 )
             }
         } else {
-            items(state.completed, key = { it.localId }) { task ->
+            items(state.completed, key = { it.localId }, contentType = { "completed" }) { task ->
                 CompletedTaskRow(
                     task = task,
                     onRestore = { viewModel.toggle(task.localId) },
@@ -261,7 +269,13 @@ fun TasksScreen(viewModel: TasksViewModel) {
                                 CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                                 Spacer(modifier = Modifier.size(Spacing.sm))
                             }
-                            Text("加载更多（${state.completed.size}/${state.totalCompleted}）")
+                            Text(
+                                stringResource(
+                                    R.string.tasks_load_more,
+                                    state.completed.size,
+                                    state.totalCompleted,
+                                ),
+                            )
                         }
                     }
                 }
@@ -270,21 +284,16 @@ fun TasksScreen(viewModel: TasksViewModel) {
     }
 
     deleteTarget?.let { task ->
-        AlertDialog(
-            onDismissRequest = { deleteTarget = null },
-            title = { Text("删除这条待办？", style = MaterialTheme.typography.titleLarge) },
-            text = { Text("「${task.content}」将被删除，删除后无法恢复。") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.delete(task.localId)
-                    deleteTarget = null
-                }) {
-                    Text("删除", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
-                }
+        ConfirmDialog(
+            title = stringResource(R.string.tasks_delete_title),
+            body = stringResource(R.string.tasks_delete_body, task.content),
+            confirmLabel = stringResource(R.string.common_delete),
+            destructive = true,
+            onConfirm = {
+                viewModel.delete(task.localId)
+                deleteTarget = null
             },
-            dismissButton = {
-                TextButton(onClick = { deleteTarget = null }) { Text("取消") }
-            },
+            onDismiss = { deleteTarget = null },
         )
     }
 }
@@ -292,17 +301,20 @@ fun TasksScreen(viewModel: TasksViewModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TaskComposer(onAdd: (String, LocalDate?) -> Unit) {
-    var content by remember { mutableStateOf("") }
-    var deadline by remember { mutableStateOf<LocalDate?>(null) }
+    // rememberSaveable keeps a half-typed task alive across rotation and tab
+    // switches; the deadline is stored as ISO text so no custom Saver is needed.
+    var content by rememberSaveable { mutableStateOf("") }
+    var deadlineIso by rememberSaveable { mutableStateOf<String?>(null) }
+    val deadline = Dates.parseIso(deadlineIso)
     PaperCard {
         Column(modifier = Modifier.padding(Spacing.md)) {
             OutlinedTextField(
                 value = content,
                 onValueChange = { content = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("下一条要做的事") },
+                placeholder = { Text(stringResource(R.string.tasks_composer_placeholder)) },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.small,
             )
             Row(
                 modifier = Modifier
@@ -312,7 +324,7 @@ private fun TaskComposer(onAdd: (String, LocalDate?) -> Unit) {
             ) {
                 DeadlineField(
                     date = deadline,
-                    onChange = { deadline = it },
+                    onChange = { deadlineIso = it?.let(Dates::iso) },
                     modifier = Modifier.weight(1f),
                 )
                 Button(
@@ -320,14 +332,17 @@ private fun TaskComposer(onAdd: (String, LocalDate?) -> Unit) {
                         if (content.isNotBlank()) {
                             onAdd(content, deadline)
                             content = ""
-                            deadline = null
+                            deadlineIso = null
                         }
                     },
                     enabled = content.isNotBlank(),
                     modifier = Modifier.padding(start = Spacing.sm),
                 ) {
                     Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text("添加", modifier = Modifier.padding(start = Spacing.xs))
+                    Text(
+                        stringResource(R.string.tasks_add),
+                        modifier = Modifier.padding(start = Spacing.xs),
+                    )
                 }
             }
         }
@@ -353,8 +368,8 @@ private fun TaskRow(
                     value = content,
                     onValueChange = { content = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("待办内容") },
-                    shape = RoundedCornerShape(12.dp),
+                    label = { Text(stringResource(R.string.tasks_field_content)) },
+                    shape = MaterialTheme.shapes.small,
                 )
                 Row(
                     modifier = Modifier
@@ -374,7 +389,10 @@ private fun TaskRow(
                         onSaveEdit(content, deadline, deadlineChanged)
                         editing = false
                     }) {
-                        Icon(Icons.Outlined.Check, contentDescription = "保存")
+                        Icon(
+                            Icons.Outlined.Check,
+                            contentDescription = stringResource(R.string.common_save),
+                        )
                     }
                     IconButton(onClick = {
                         content = task.content
@@ -382,7 +400,10 @@ private fun TaskRow(
                         deadlineChanged = false
                         editing = false
                     }) {
-                        Icon(Icons.Outlined.Close, contentDescription = "取消")
+                        Icon(
+                            Icons.Outlined.Close,
+                            contentDescription = stringResource(R.string.common_cancel),
+                        )
                     }
                 }
             }
@@ -391,10 +412,10 @@ private fun TaskRow(
                 modifier = Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.sm),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onToggle) {
+                IconToggleButton(checked = false, onCheckedChange = { onToggle() }) {
                     Icon(
                         imageVector = Icons.Outlined.RadioButtonUnchecked,
-                        contentDescription = "标记为已完成",
+                        contentDescription = stringResource(R.string.tasks_mark_done),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -410,7 +431,7 @@ private fun TaskRow(
                 IconButton(onClick = { editing = true }) {
                     Icon(
                         Icons.Outlined.Edit,
-                        contentDescription = "编辑待办",
+                        contentDescription = stringResource(R.string.tasks_edit),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp),
                     )
@@ -418,7 +439,7 @@ private fun TaskRow(
                 IconButton(onClick = onDelete) {
                     Icon(
                         Icons.Outlined.DeleteOutline,
-                        contentDescription = "删除待办",
+                        contentDescription = stringResource(R.string.tasks_delete),
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(20.dp),
                     )
@@ -444,7 +465,7 @@ private fun CompletedTaskRow(
         IconButton(onClick = onRestore) {
             Icon(
                 Icons.Filled.CheckCircle,
-                contentDescription = "恢复为未完成",
+                contentDescription = stringResource(R.string.tasks_restore),
                 tint = MaterialTheme.colorScheme.secondary,
             )
         }
@@ -460,7 +481,7 @@ private fun CompletedTaskRow(
         IconButton(onClick = onDelete) {
             Icon(
                 Icons.Outlined.DeleteOutline,
-                contentDescription = "删除待办",
+                contentDescription = stringResource(R.string.tasks_delete),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
             )
@@ -471,11 +492,16 @@ private fun CompletedTaskRow(
 @Composable
 private fun DeadlineBadge(rawDeadline: String?) {
     val deadline = Dates.parseIso(rawDeadline) ?: return
+    val context = LocalContext.current
     val state = Dates.deadlineState(deadline, LocalDate.now())
     val (label, color) = when (state) {
-        DeadlineState.OVERDUE -> "已逾期 · ${dateLabel(deadline)}" to MaterialTheme.colorScheme.error
-        DeadlineState.URGENT -> "即将到期 · ${dateLabel(deadline)}" to MaterialTheme.colorScheme.tertiary
-        DeadlineState.LATER -> dateLabel(deadline) to MaterialTheme.colorScheme.onSurfaceVariant
+        DeadlineState.OVERDUE ->
+            context.getString(R.string.tasks_deadline_overdue, dateLabel(context, deadline)) to
+                MaterialTheme.colorScheme.error
+        DeadlineState.URGENT ->
+            context.getString(R.string.tasks_deadline_urgent, dateLabel(context, deadline)) to
+                MaterialTheme.colorScheme.tertiary
+        DeadlineState.LATER -> dateLabel(context, deadline) to MaterialTheme.colorScheme.onSurfaceVariant
         DeadlineState.NONE -> return
     }
     Row(
@@ -497,7 +523,8 @@ private fun DeadlineBadge(rawDeadline: String?) {
     }
 }
 
-private fun dateLabel(date: LocalDate): String = "${date.monthValue}月${date.dayOfMonth}日"
+private fun dateLabel(context: Context, date: LocalDate): String =
+    context.getString(R.string.tasks_deadline_date, date.monthValue, date.dayOfMonth)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -507,6 +534,7 @@ private fun DeadlineField(
     modifier: Modifier = Modifier,
 ) {
     var showPicker by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         FilledTonalButton(
             onClick = { showPicker = true },
@@ -514,7 +542,8 @@ private fun DeadlineField(
         ) {
             Icon(Icons.Outlined.CalendarMonth, contentDescription = null, modifier = Modifier.size(16.dp))
             Text(
-                text = date?.let(::dateLabel) ?: "截止日期",
+                text = date?.let { dateLabel(context, it) }
+                    ?: stringResource(R.string.tasks_deadline_set),
                 modifier = Modifier.padding(start = Spacing.xs),
                 style = MaterialTheme.typography.labelLarge,
             )
@@ -523,7 +552,7 @@ private fun DeadlineField(
             IconButton(onClick = { onChange(null) }) {
                 Icon(
                     Icons.Outlined.Close,
-                    contentDescription = "清除截止日期",
+                    contentDescription = stringResource(R.string.tasks_deadline_clear),
                     modifier = Modifier.size(18.dp),
                 )
             }
@@ -548,10 +577,12 @@ private fun DeadlineField(
                         onChange(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
                     }
                     showPicker = false
-                }) { Text("确定") }
+                }) { Text(stringResource(R.string.common_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text("取消") }
+                TextButton(onClick = { showPicker = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
             },
         ) {
             DatePicker(state = pickerState)

@@ -30,7 +30,7 @@
         android:ellipsize="end"
         android:maxLines="2"
         android:text="@string/widget_empty"
-        android:textColor="#B31C1A17"
+        android:textColor="@color/widget_text_secondary"
         android:textSize="13sp" />
 
     <TextView
@@ -39,7 +39,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="end"
         android:layout_marginTop="4dp"
-        android:background="#14B03A2E"
+        android:background="@color/widget_action_bg"
         android:paddingStart="12dp"
         android:paddingTop="5dp"
         android:paddingEnd="12dp"

@@ -6,6 +6,7 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import com.hmilyld.weeklyreport.R
 
 object BiometricUi {
     fun isAvailable(context: Context): Boolean =
@@ -21,7 +22,7 @@ object BiometricUi {
     ) {
         val activity = context.findActivity()
         if (activity == null) {
-            onFailure("无法打开生物识别")
+            onFailure(context.getString(R.string.biometric_unavailable))
             return
         }
         val executor = ContextCompat.getMainExecutor(context)
@@ -38,11 +39,12 @@ object BiometricUi {
                         BiometricPrompt.ERROR_NEGATIVE_BUTTON,
                         BiometricPrompt.ERROR_USER_CANCELED,
                         BiometricPrompt.ERROR_CANCELED,
-                        -> "已取消生物识别"
+                        -> context.getString(R.string.biometric_canceled)
                         BiometricPrompt.ERROR_LOCKOUT,
                         BiometricPrompt.ERROR_LOCKOUT_PERMANENT,
-                        -> "尝试次数过多，请稍后再试"
-                        BiometricPrompt.ERROR_NO_BIOMETRICS -> "设备尚未录入指纹或面容"
+                        -> context.getString(R.string.biometric_locked_out)
+                        BiometricPrompt.ERROR_NO_BIOMETRICS ->
+                            context.getString(R.string.biometric_not_enrolled)
                         else -> errString.toString()
                     }
                     onFailure(message)
@@ -53,7 +55,7 @@ object BiometricUi {
             .setTitle(title)
             .setSubtitle(subtitle)
             .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK)
-            .setNegativeButtonText("取消")
+            .setNegativeButtonText(context.getString(R.string.common_cancel))
             .build()
         prompt.authenticate(info)
     }

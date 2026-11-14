@@ -1,5 +1,7 @@
 package com.hmilyld.weeklyreport.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,11 +13,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Article
+import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.CloudDone
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.AlertDialog
@@ -38,15 +44,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hmilyld.weeklyreport.AppContainer
+import com.hmilyld.weeklyreport.R
 import com.hmilyld.weeklyreport.data.SessionState
 import com.hmilyld.weeklyreport.data.local.OutboxItem
 import com.hmilyld.weeklyreport.ui.components.Banner
@@ -75,11 +85,29 @@ data class WidgetOpen(
     val id: Long,
 )
 
-private enum class AppTab(val label: String) {
-    DAILY("日报"),
-    TASKS("待办"),
-    REPORTS("报告"),
-    SETTINGS("设置"),
+private enum class AppTab(@StringRes val labelRes: Int) {
+    DAILY(R.string.app_tab_daily),
+    TASKS(R.string.app_tab_tasks),
+    REPORTS(R.string.app_tab_reports),
+    SETTINGS(R.string.app_tab_settings),
+}
+
+// Material 3 navigation bars show the filled icon for the current tab and the
+// outlined one elsewhere; mixing styles per screen is what makes them look off.
+private fun AppTab.icon(selected: Boolean): ImageVector = if (selected) {
+    when (this) {
+        AppTab.DAILY -> Icons.Filled.EditNote
+        AppTab.TASKS -> Icons.Filled.Checklist
+        AppTab.REPORTS -> Icons.AutoMirrored.Filled.Article
+        AppTab.SETTINGS -> Icons.Filled.Settings
+    }
+} else {
+    when (this) {
+        AppTab.DAILY -> Icons.Outlined.EditNote
+        AppTab.TASKS -> Icons.Outlined.Checklist
+        AppTab.REPORTS -> Icons.AutoMirrored.Outlined.Article
+        AppTab.SETTINGS -> Icons.Outlined.Settings
+    }
 }
 
 @Composable
@@ -108,13 +136,14 @@ fun AppRoot(
         is SessionState.Locked -> {
             val context = LocalContext.current
             val available = remember { BiometricUi.isAvailable(context) }
+            val unlockTitle = stringResource(R.string.app_biometric_unlock_title)
             LockScreen(
                 username = current.username,
                 biometricAvailable = available,
                 onUnlock = {
                     BiometricUi.authenticate(
                         context = context,
-                        title = "解锁周记",
+                        title = unlockTitle,
                         subtitle = current.username,
                         onSuccess = { container.session.unlock() },
                         onFailure = { },
@@ -160,6 +189,7 @@ private fun LoggedInRoot(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val saveableStates = rememberSaveableStateHolder()
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.DAILY.name) }
     val tab = AppTab.entries.firstOrNull { it.name == selectedTab } ?: AppTab.DAILY
     val counts by appViewModel.counts.collectAsState()
@@ -217,6 +247,12 @@ private fun LoggedInRoot(
         scope.launch { snackbarHostState.showSnackbar(message, withDismissAction = true) }
     }
 
+    // Back from any secondary tab returns to the daily log instead of leaving
+    // the app; the start destination keeps the default exit behaviour.
+    BackHandler(enabled = tab != AppTab.DAILY) {
+        selectedTab = AppTab.DAILY.name
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -228,16 +264,13 @@ private fun LoggedInRoot(
                         onClick = { selectedTab = entry.name },
                         icon = {
                             Icon(
-                                imageVector = when (entry) {
-                                    AppTab.DAILY -> Icons.Filled.EditNote
-                                    AppTab.TASKS -> Icons.Filled.Checklist
-                                    AppTab.REPORTS -> Icons.Filled.Article
-                                    AppTab.SETTINGS -> Icons.Filled.Settings
-                                },
-                                contentDescription = entry.label,
+                                imageVector = entry.icon(tab == entry),
+                                // The label below already names the tab; a
+                                // description here would be read twice.
+                                contentDescription = null,
                             )
                         },
-                        label = { Text(entry.label) },
+                        label = { Text(stringResource(entry.labelRes)) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = MaterialTheme.colorScheme.primary,
                             selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -255,47 +288,57 @@ private fun LoggedInRoot(
         ) {
             when {
                 counts.conflicts > 0 -> Banner(
-                    text = "有 ${counts.conflicts} 条离线修改与服务器冲突，需要你确认后才覆盖。",
+                    text = stringResource(R.string.app_banner_conflict_count, counts.conflicts),
                     action = {
-                        TextButton(onClick = { showConflicts = true }) { Text("处理") }
+                        TextButton(onClick = { showConflicts = true }) {
+                            Text(stringResource(R.string.app_banner_action))
+                        }
                     },
                     modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
                 )
 
                 counts.failed > 0 -> Banner(
-                    text = "${counts.failed} 条修改发送失败，已保留在本机。",
+                    text = stringResource(R.string.app_banner_failed_count, counts.failed),
                     tone = MaterialTheme.colorScheme.error,
                     icon = Icons.Outlined.WarningAmber,
                     action = {
-                        TextButton(onClick = { selectedTab = AppTab.SETTINGS.name }) { Text("处理") }
+                        TextButton(onClick = { selectedTab = AppTab.SETTINGS.name }) {
+                            Text(stringResource(R.string.app_banner_action))
+                        }
                     },
                     modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
                 )
 
                 counts.pending > 0 -> Banner(
-                    text = "${counts.pending} 条修改待发送，联网后按顺序补发。",
+                    text = stringResource(R.string.app_banner_pending_count, counts.pending),
                     tone = MaterialTheme.colorScheme.secondary,
                     icon = Icons.Outlined.Sync,
                     action = {
-                        TextButton(onClick = appViewModel::retryQueue) { Text("重试") }
+                        TextButton(onClick = appViewModel::retryQueue) {
+                            Text(stringResource(R.string.common_retry))
+                        }
                     },
                     modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
                 )
             }
 
             Box(modifier = Modifier.weight(1f)) {
-                when (tab) {
-                    AppTab.DAILY -> DailyScreen(dailyViewModel)
-                    AppTab.TASKS -> TasksScreen(tasksViewModel)
-                    AppTab.REPORTS -> ReportsScreen(reportsViewModel, onNotify = notify)
-                    AppTab.SETTINGS -> SettingsScreen(
-                        viewModel = settingsViewModel,
-                        theme = theme,
-                        biometricEnabled = biometricEnabled,
-                        onThemeChange = appViewModel::setTheme,
-                        onBiometricChange = settingsViewModel::setBiometricEnabled,
-                        onNotify = notify,
-                    )
+                // Each tab keeps its own scroll position and text fields when
+                // the user switches away and back.
+                saveableStates.SaveableStateProvider(tab.name) {
+                    when (tab) {
+                        AppTab.DAILY -> DailyScreen(dailyViewModel)
+                        AppTab.TASKS -> TasksScreen(tasksViewModel)
+                        AppTab.REPORTS -> ReportsScreen(reportsViewModel, onNotify = notify)
+                        AppTab.SETTINGS -> SettingsScreen(
+                            viewModel = settingsViewModel,
+                            theme = theme,
+                            biometricEnabled = biometricEnabled,
+                            onThemeChange = appViewModel::setTheme,
+                            onBiometricChange = settingsViewModel::setBiometricEnabled,
+                            onNotify = notify,
+                        )
+                    }
                 }
             }
         }
@@ -325,22 +368,26 @@ private fun ConflictDialog(
     onDismiss: () -> Unit,
 ) {
     val localText = if (conflict.kind.name == "DAILY_DELETE") {
-        "本地：删除这一天的记录"
+        stringResource(R.string.app_conflict_local_delete)
     } else {
-        "本地：${ListInput.bodyWithoutMarkers(conflict.payload).trim().ifEmpty { "（空白）" }}"
+        stringResource(
+            R.string.app_conflict_local_text,
+            ListInput.bodyWithoutMarkers(conflict.payload).trim()
+                .ifEmpty { stringResource(R.string.app_conflict_blank) },
+        )
     }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "${conflict.entityKey} 有冲突",
+                text = stringResource(R.string.app_conflict_title, conflict.entityKey),
                 style = MaterialTheme.typography.titleLarge,
             )
         },
         text = {
             Column(modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
                 Text(
-                    text = "这一天的记录在离线期间被服务器更新过（还剩 $total 条冲突）。为避免静默覆盖，需要你选择保留哪一版。",
+                    text = stringResource(R.string.app_conflict_body, total),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -350,7 +397,11 @@ private fun ConflictDialog(
                 )
                 Text(localText, style = MaterialTheme.typography.bodyMedium)
                 Text(
-                    text = "服务器：${conflict.serverContent?.takeIf { it.isNotBlank() } ?: "（空白）"}",
+                    text = stringResource(
+                        R.string.app_conflict_server_text,
+                        conflict.serverContent?.takeIf { it.isNotBlank() }
+                            ?: stringResource(R.string.app_conflict_blank),
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.padding(top = Spacing.sm),
@@ -359,13 +410,19 @@ private fun ConflictDialog(
         },
         confirmButton = {
             TextButton(onClick = onOverwrite) {
-                Text("用本地覆盖", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
+                Text(
+                    stringResource(R.string.app_conflict_overwrite),
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.SemiBold,
+                )
             }
         },
         dismissButton = {
             Row(horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onKeepServer) { Text("保留服务器版本") }
-                TextButton(onClick = onDismiss) { Text("稍后") }
+                TextButton(onClick = onKeepServer) {
+                    Text(stringResource(R.string.app_conflict_keep_server))
+                }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.app_conflict_later)) }
             }
         },
     )

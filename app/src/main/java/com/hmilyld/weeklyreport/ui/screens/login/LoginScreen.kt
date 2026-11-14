@@ -8,9 +8,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,17 +34,18 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import com.hmilyld.weeklyreport.R
 import com.hmilyld.weeklyreport.ui.components.Banner
 import com.hmilyld.weeklyreport.ui.theme.Spacing
 
@@ -69,10 +70,12 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                // Consume status/navigation/cutout insets before scrolling so
+                // the IME shrinks the viewport instead of covering the fields.
+                .safeDrawingPadding()
                 .verticalScroll(scroll)
-                .imePadding()
                 .padding(horizontal = Spacing.xl)
-                .padding(top = 64.dp, bottom = Spacing.xxl),
+                .padding(top = Spacing.lg, bottom = Spacing.xxl),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -81,25 +84,23 @@ fun LoginScreen(
                         .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)),
                 )
                 Text(
-                    text = "周记 · WEEKLY LOG",
+                    text = stringResource(R.string.login_kicker),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = Spacing.sm),
                 )
             }
             Text(
-                text = "把这一周写下来",
+                text = stringResource(R.string.login_title),
                 style = MaterialTheme.typography.displaySmall.copy(
                     fontSize = 30.sp,
                     lineHeight = 36.sp,
                 ),
                 color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = Spacing.lg),
             )
             Text(
-                text = "自己的服务器，自己的记录。登录后可以离线写日报和待办，联网时按顺序补发。",
+                text = stringResource(R.string.login_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = Spacing.sm),
@@ -120,7 +121,15 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.xl),
-                label = { Text(if (state.serverInput.isBlank()) "服务器地址（首次必填）" else "服务器地址") },
+                label = {
+                    Text(
+                        if (state.serverInput.isBlank()) {
+                            stringResource(R.string.login_server_label_required)
+                        } else {
+                            stringResource(R.string.common_server_address)
+                        },
+                    )
+                },
                 placeholder = { Text("https://report.example.com:18001") },
                 singleLine = true,
                 isError = state.serverError != null,
@@ -128,7 +137,7 @@ fun LoginScreen(
                     Text(
                         text = state.serverError
                             ?: state.testResult
-                            ?: "正式版仅支持 HTTPS；调试版可用局域网 HTTP",
+                            ?: stringResource(R.string.login_server_hint),
                     )
                 },
                 shape = RoundedCornerShape(14.dp),
@@ -151,7 +160,7 @@ fun LoginScreen(
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                         Spacer(modifier = Modifier.size(Spacing.sm))
                     }
-                    Text("测试连接")
+                    Text(stringResource(R.string.common_test_connection))
                 }
             }
 
@@ -164,7 +173,7 @@ fun LoginScreen(
                 value = state.username,
                 onValueChange = viewModel::updateUsername,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("用户名") },
+                label = { Text(stringResource(R.string.login_username)) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -175,7 +184,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.md),
-                label = { Text("密码") },
+                label = { Text(stringResource(R.string.login_password)) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
                 visualTransformation = if (state.showPassword) {
@@ -191,7 +200,11 @@ fun LoginScreen(
                             } else {
                                 Icons.Outlined.Visibility
                             },
-                            contentDescription = if (state.showPassword) "隐藏密码" else "显示密码",
+                            contentDescription = if (state.showPassword) {
+                                stringResource(R.string.login_hide_password)
+                            } else {
+                                stringResource(R.string.login_show_password)
+                            },
                         )
                     }
                 },
@@ -217,7 +230,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.lg)
-                    .height(52.dp),
+                    .heightIn(min = 52.dp),
                 shape = RoundedCornerShape(14.dp),
             ) {
                 if (state.loggingIn) {
@@ -228,11 +241,11 @@ fun LoginScreen(
                     )
                     Spacer(modifier = Modifier.size(Spacing.sm))
                 }
-                Text("登录", fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.login_action), fontWeight = FontWeight.SemiBold)
             }
 
             Text(
-                text = "密码只用于换取登录令牌，不会保存在设备上；令牌由 Android Keystore 加密。",
+                text = stringResource(R.string.login_footer),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

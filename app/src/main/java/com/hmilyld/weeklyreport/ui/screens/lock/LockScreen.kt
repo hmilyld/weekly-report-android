@@ -8,8 +8,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,9 +26,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.hmilyld.weeklyreport.R
 import com.hmilyld.weeklyreport.ui.theme.Spacing
 
 @Composable
@@ -45,6 +48,7 @@ fun LockScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .safeDrawingPadding()
             .padding(Spacing.xl),
     ) {
         Column(
@@ -65,12 +69,16 @@ fun LockScreen(
                 )
             }
             Text(
-                text = "周记已锁定",
+                text = stringResource(R.string.lock_title),
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(top = Spacing.lg),
             )
             Text(
-                text = if (username.isBlank()) "使用已保存的会话" else "已保存 $username 的登录状态",
+                text = if (username.isBlank()) {
+                    stringResource(R.string.lock_subtitle_saved_session)
+                } else {
+                    stringResource(R.string.lock_subtitle_username, username)
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = Spacing.xs),
@@ -82,16 +90,16 @@ fun LockScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.xxl)
-                    .height(52.dp),
+                    .heightIn(min = 52.dp),
                 shape = RoundedCornerShape(14.dp),
             ) {
                 Icon(Icons.Outlined.Fingerprint, contentDescription = null)
                 Spacer(modifier = Modifier.size(Spacing.sm))
-                Text("使用指纹 / 面容解锁", fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.lock_unlock_action), fontWeight = FontWeight.SemiBold)
             }
             if (!biometricAvailable) {
                 Text(
-                    text = "此设备没有可用的生物识别，或尚未录入指纹。",
+                    text = stringResource(R.string.lock_no_biometric),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                     textAlign = TextAlign.Center,
@@ -103,12 +111,12 @@ fun LockScreen(
                 horizontalArrangement = Arrangement.Center,
             ) {
                 TextButton(onClick = onLoginWithPassword) {
-                    Text("使用账号密码登录")
+                    Text(stringResource(R.string.lock_login_with_password))
                 }
             }
         }
         Text(
-            text = "令牌保存在 Android Keystore 中，解锁后才载入内存。",
+            text = stringResource(R.string.lock_footer),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

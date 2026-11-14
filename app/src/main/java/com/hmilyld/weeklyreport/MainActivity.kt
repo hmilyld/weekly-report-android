@@ -1,6 +1,7 @@
 package com.hmilyld.weeklyreport
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -26,6 +27,11 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // enableEdgeToEdge() turns the contrast scrim on; with a NavigationBar
+        // that would paint a translucent gray band over the app's own surface.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
         val container = (application as WeeklyReportApp).container
         widgetOpen.value = parseIntent(intent)
 

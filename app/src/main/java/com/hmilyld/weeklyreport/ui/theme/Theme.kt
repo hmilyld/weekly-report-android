@@ -1,7 +1,9 @@
 package com.hmilyld.weeklyreport.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -48,9 +50,21 @@ private val LightColors = lightColorScheme(
     onError = Color(0xFFFFFFFF),
     errorContainer = Color(0xFFF7DDD8),
     onErrorContainer = Color(0xFF410001),
+    // Every container / inverse slot is pinned to the warm palette: the M3
+    // baseline values are cool gray-purple and would leak into Snackbar,
+    // Switch tracks and tooltips.
+    surfaceTint = Vermilion,
+    surfaceBright = PaperRaised,
+    surfaceDim = Color(0xFFE6DECF),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
     surfaceContainerLow = Color(0xFFFBF6EC),
     surfaceContainer = Color(0xFFF8F2E6),
     surfaceContainerHigh = Color(0xFFF3ECDE),
+    surfaceContainerHighest = Color(0xFFEDE6D8),
+    inverseSurface = Color(0xFF2E2A24),
+    inverseOnSurface = Color(0xFFF5EEE0),
+    inversePrimary = Color(0xFFE98570),
+    scrim = Color(0xFF000000),
 )
 
 private val DarkColors = darkColorScheme(
@@ -76,9 +90,18 @@ private val DarkColors = darkColorScheme(
     onError = Color(0xFF690005),
     errorContainer = Color(0xFF5C140F),
     onErrorContainer = Color(0xFFFFDAD4),
+    surfaceTint = Color(0xFFE98570),
+    surfaceBright = Color(0xFF3A342A),
+    surfaceDim = Color(0xFF14120E),
+    surfaceContainerLowest = Color(0xFF0F0D0A),
     surfaceContainerLow = Color(0xFF1A1711),
     surfaceContainer = Color(0xFF201C15),
     surfaceContainerHigh = Color(0xFF2A251C),
+    surfaceContainerHighest = Color(0xFF352F25),
+    inverseSurface = Color(0xFFF2EADB),
+    inverseOnSurface = Color(0xFF322E26),
+    inversePrimary = Color(0xFF8E2F22),
+    scrim = Color(0xFF000000),
 )
 
 private val AppTypography = Typography(
@@ -163,6 +186,16 @@ object Spacing {
     val xxl = 32.dp
 }
 
+// One corner-radius ladder for cards, sheets, fields and chips, so screens do
+// not invent 4/12/14/16/20dp shapes ad hoc.
+private val AppShapes = Shapes(
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(28.dp),
+)
+
 @Composable
 fun WeeklyReportTheme(mode: ThemeMode, content: @Composable () -> Unit) {
     val dark = when (mode) {
@@ -173,6 +206,7 @@ fun WeeklyReportTheme(mode: ThemeMode, content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = if (dark) DarkColors else LightColors,
         typography = AppTypography,
+        shapes = AppShapes,
         content = content,
     )
 }

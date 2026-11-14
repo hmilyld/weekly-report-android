@@ -17,7 +17,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import com.hmilyld.weeklyreport.R
 import com.hmilyld.weeklyreport.ui.theme.Spacing
 
 @Composable
@@ -38,7 +40,10 @@ fun PeriodNavigator(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onPrevious, enabled = enabled) {
-                    Icon(Icons.Outlined.ChevronLeft, contentDescription = "上一周期")
+                    Icon(
+                        Icons.Outlined.ChevronLeft,
+                        contentDescription = stringResource(R.string.common_previous_period),
+                    )
                 }
                 Column(
                     modifier = Modifier.weight(1f),
@@ -57,7 +62,10 @@ fun PeriodNavigator(
                     )
                 }
                 IconButton(onClick = onNext, enabled = enabled) {
-                    Icon(Icons.Outlined.ChevronRight, contentDescription = "下一周期")
+                    Icon(
+                        Icons.Outlined.ChevronRight,
+                        contentDescription = stringResource(R.string.common_next_period),
+                    )
                 }
             }
         }

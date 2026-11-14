@@ -20,6 +20,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.WeeklyReport"
         android:usesCleartextTraffic="false"
+        android:enableOnBackInvokedCallback="true"
         tools:targetApi="35">
 
         <activity

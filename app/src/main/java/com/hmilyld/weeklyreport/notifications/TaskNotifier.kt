@@ -26,14 +26,13 @@ object TaskNotifier {
     private const val NOTIFICATION_ID = 4201
 
     fun ensureChannel(context: Context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "待办到期提醒",
+            context.getString(R.string.tasks_notification_name),
             NotificationManager.IMPORTANCE_DEFAULT,
         ).apply {
-            description = "逾期和三天内到期的本地提醒"
+            description = context.getString(R.string.tasks_notification_channel_desc)
         }
         manager.createNotificationChannel(channel)
     }
@@ -75,14 +74,25 @@ object TaskNotifier {
 
         val overdue = due.count { it.third == DeadlineState.OVERDUE }
         val urgent = due.size - overdue
-        val summary = buildString {
-            if (overdue > 0) append("$overdue 项已逾期")
-            if (overdue > 0 && urgent > 0) append("，")
-            if (urgent > 0) append("$urgent 项三天内到期")
+        val summary = when {
+            overdue > 0 && urgent > 0 ->
+                context.getString(R.string.tasks_notification_summary_both, overdue, urgent)
+            overdue > 0 -> context.getString(R.string.tasks_notification_summary_overdue, overdue)
+            else -> context.getString(R.string.tasks_notification_summary_urgent, urgent)
         }
         val detail = due.take(6).joinToString("\n") { (content, deadline, state) ->
-            val prefix = if (state == DeadlineState.OVERDUE) "已逾期" else "临期"
-            "· [$prefix] $content（${deadline.monthValue}月${deadline.dayOfMonth}日）"
+            val prefix = if (state == DeadlineState.OVERDUE) {
+                context.getString(R.string.tasks_notification_prefix_overdue)
+            } else {
+                context.getString(R.string.tasks_notification_prefix_urgent)
+            }
+            context.getString(
+                R.string.tasks_notification_detail,
+                prefix,
+                content,
+                deadline.monthValue,
+                deadline.dayOfMonth,
+            )
         }
 
         val intent = Intent(context, MainActivity::class.java).apply {
@@ -97,7 +107,7 @@ object TaskNotifier {
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("待办提醒 · $summary")
+            .setContentTitle(context.getString(R.string.tasks_notification_title, summary))
             .setContentText(due.first().first)
             .setStyle(NotificationCompat.BigTextStyle().bigText(detail))
             .setContentIntent(pending)

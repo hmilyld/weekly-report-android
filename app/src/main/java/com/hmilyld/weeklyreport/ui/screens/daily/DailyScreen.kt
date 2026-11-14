@@ -25,7 +25,6 @@ import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,19 +43,22 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.hmilyld.weeklyreport.R
 import com.hmilyld.weeklyreport.ui.components.Banner
+import com.hmilyld.weeklyreport.ui.components.ConfirmDialog
 import com.hmilyld.weeklyreport.ui.components.LoadingRow
 import com.hmilyld.weeklyreport.ui.components.PaperCard
 import com.hmilyld.weeklyreport.ui.components.PeriodNavigator
@@ -80,30 +82,33 @@ fun DailyScreen(viewModel: DailyViewModel) {
             .padding(horizontal = Spacing.lg),
     ) {
         ScreenHeader(
-            kicker = "日报 · DAILY",
-            title = "一周的记录",
-            subtitle = "点任意一天补记进展；一周写成几行，周报就有素材。",
+            kicker = stringResource(R.string.daily_kicker),
+            title = stringResource(R.string.daily_title),
+            subtitle = stringResource(R.string.daily_subtitle),
             trailing = {
                 IconButton(onClick = { viewModel.load() }) {
-                    Icon(Icons.Outlined.Refresh, contentDescription = "刷新本周")
+                    Icon(
+                        Icons.Outlined.Refresh,
+                        contentDescription = stringResource(R.string.daily_refresh_week),
+                    )
                 }
             },
         )
 
         PeriodNavigator(
             label = Dates.weekRangeLabel(state.monday),
-            caption = "已记 ${state.weekCount} 天 · 周一为周首",
+            caption = stringResource(R.string.daily_week_caption, state.weekCount),
             onPrevious = viewModel::previousWeek,
             onNext = viewModel::nextWeek,
             onToday = if (state.isCurrentWeek) null else viewModel::thisWeek,
-            todayLabel = "回到本周",
+            todayLabel = stringResource(R.string.common_this_week),
             modifier = Modifier.padding(top = Spacing.md),
         )
 
         if (state.offline) {
             Box(modifier = Modifier.padding(top = Spacing.sm)) {
                 Banner(
-                    text = "离线：显示本机缓存；新修改会先保存在本机，联网后按顺序发送。",
+                    text = stringResource(R.string.daily_offline_banner),
                     tone = MaterialTheme.colorScheme.secondary,
                     icon = Icons.Outlined.CloudOff,
                 )
@@ -114,14 +119,16 @@ fun DailyScreen(viewModel: DailyViewModel) {
                 Banner(
                     text = state.error.orEmpty(),
                     action = {
-                        TextButton(onClick = { viewModel.load() }) { Text("重试") }
+                        TextButton(onClick = { viewModel.load() }) {
+                            Text(stringResource(R.string.common_retry))
+                        }
                     },
                 )
             }
         }
 
         if (state.loading && state.days.isEmpty()) {
-            LoadingRow("正在读取本周日报…")
+            LoadingRow(stringResource(R.string.daily_loading))
         } else {
             PaperCard(modifier = Modifier.padding(top = Spacing.md)) {
                 Column {
@@ -135,7 +142,7 @@ fun DailyScreen(viewModel: DailyViewModel) {
             }
             if (state.weekCount == 0) {
                 Text(
-                    text = "这一周还没有记录。挑一天，从「1. 」开始写。",
+                    text = stringResource(R.string.daily_empty_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = Spacing.md, start = Spacing.xs),
@@ -145,9 +152,9 @@ fun DailyScreen(viewModel: DailyViewModel) {
         Spacer(modifier = Modifier.size(Spacing.xxl))
     }
 
-    if (editor != null) {
+    editor?.let { current ->
         DailyEditorSheet(
-            editor = editor!!,
+            editor = current,
             saving = saving,
             onDismiss = viewModel::closeEditor,
             onSave = viewModel::save,
@@ -184,7 +191,7 @@ private fun DayRow(day: DailyDayUi, onClick: () -> Unit) {
             )
             if (day.isToday) {
                 Pill(
-                    text = "今天",
+                    text = stringResource(R.string.daily_pill_today),
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = Spacing.xs),
                 )
@@ -192,8 +199,8 @@ private fun DayRow(day: DailyDayUi, onClick: () -> Unit) {
         }
         Column(modifier = Modifier.weight(1f)) {
             val preview = when {
-                day.deleted -> "这条记录将被删除"
-                day.body.isEmpty() -> "还没有记录，点这里补记"
+                day.deleted -> stringResource(R.string.daily_row_deleted)
+                day.body.isEmpty() -> stringResource(R.string.daily_row_empty)
                 else -> day.body
             }
             Text(
@@ -209,7 +216,11 @@ private fun DayRow(day: DailyDayUi, onClick: () -> Unit) {
             )
             if (day.pending) {
                 Pill(
-                    text = if (day.deleted) "待删除" else "待同步",
+                    text = if (day.deleted) {
+                        stringResource(R.string.daily_pill_pending_delete)
+                    } else {
+                        stringResource(R.string.daily_pill_pending_sync)
+                    },
                     color = if (day.deleted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.padding(top = Spacing.xs),
                 )
@@ -235,7 +246,7 @@ private fun DailyEditorSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val keyboard = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
-    var value by remember(editor.date, editor.seeded) {
+    var value by rememberSaveable(editor.date, editor.seeded, stateSaver = TextFieldValue.Saver) {
         mutableStateOf(
             TextFieldValue(
                 text = editor.initialContent,
@@ -243,8 +254,8 @@ private fun DailyEditorSheet(
             ),
         )
     }
-    var showDiscard by remember { mutableStateOf(false) }
-    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showDiscard by rememberSaveable { mutableStateOf(false) }
+    var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
 
     val dirty = value.text != editor.initialContent
     val body = ListInput.bodyWithoutMarkers(value.text).trim()
@@ -304,7 +315,11 @@ private fun DailyEditorSheet(
                 .padding(bottom = Spacing.lg),
         ) {
             Text(
-                text = if (editor.hasRecord) "编辑日报" else "记录这一天的进展",
+                text = if (editor.hasRecord) {
+                    stringResource(R.string.daily_editor_title_edit)
+                } else {
+                    stringResource(R.string.daily_editor_title_new)
+                },
                 style = MaterialTheme.typography.headlineSmall,
             )
             Text(
@@ -322,7 +337,7 @@ private fun DailyEditorSheet(
                     .padding(top = Spacing.lg)
                     .heightIn(min = 240.dp)
                     .focusRequester(focusRequester),
-                placeholder = { Text("今天做了什么？一两句就够，比如：修了导出 CSV 的日期偏移。") },
+                placeholder = { Text(stringResource(R.string.daily_editor_placeholder)) },
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = FontFamily.SansSerif,
                     lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
@@ -339,9 +354,9 @@ private fun DailyEditorSheet(
             ) {
                 Text(
                     text = if (body.isEmpty()) {
-                        "回车自动续号；空条目回车结束列表"
+                        stringResource(R.string.daily_editor_hint_empty)
                     } else {
-                        "${body.length} 字"
+                        stringResource(R.string.daily_editor_char_count, body.length)
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -357,7 +372,10 @@ private fun DailyEditorSheet(
                             contentDescription = null,
                             modifier = Modifier.size(18.dp),
                         )
-                        Text("删除", color = MaterialTheme.colorScheme.error)
+                        Text(
+                            stringResource(R.string.common_delete),
+                            color = MaterialTheme.colorScheme.error,
+                        )
                     }
                 }
             }
@@ -369,7 +387,9 @@ private fun DailyEditorSheet(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = requestClose, enabled = !saving) { Text("取消") }
+                TextButton(onClick = requestClose, enabled = !saving) {
+                    Text(stringResource(R.string.common_cancel))
+                }
                 Button(
                     onClick = {
                         keyboard?.hide()
@@ -386,49 +406,46 @@ private fun DailyEditorSheet(
                         )
                         Spacer(modifier = Modifier.size(Spacing.sm))
                     }
-                    Text(if (saving) "保存中" else "保存")
+                    Text(
+                        if (saving) {
+                            stringResource(R.string.common_saving)
+                        } else {
+                            stringResource(R.string.common_save)
+                        },
+                    )
                 }
             }
         }
     }
 
     if (showDiscard) {
-        AlertDialog(
-            onDismissRequest = { showDiscard = false },
-            title = { Text("放弃未保存的修改？", style = MaterialTheme.typography.titleLarge) },
-            text = { Text("这一天的内容还没有保存，离开后会丢失这次修改。") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDiscard = false
-                    keyboard?.hide()
-                    onDismiss()
-                }) {
-                    Text("放弃修改", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
-                }
+        ConfirmDialog(
+            title = stringResource(R.string.common_discard_unsaved_title),
+            body = stringResource(R.string.daily_discard_body),
+            confirmLabel = stringResource(R.string.common_discard_edits),
+            destructive = true,
+            dismissLabel = stringResource(R.string.common_continue_editing),
+            onConfirm = {
+                showDiscard = false
+                keyboard?.hide()
+                onDismiss()
             },
-            dismissButton = {
-                TextButton(onClick = { showDiscard = false }) { Text("继续编辑") }
-            },
+            onDismiss = { showDiscard = false },
         )
     }
 
     if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("删除这条日报？", style = MaterialTheme.typography.titleLarge) },
-            text = { Text("${Dates.iso(editor.date)} 的记录将被删除，删除后无法恢复。") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDeleteConfirm = false
-                    keyboard?.hide()
-                    onDelete()
-                }) {
-                    Text("删除", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
-                }
+        ConfirmDialog(
+            title = stringResource(R.string.daily_delete_title),
+            body = stringResource(R.string.daily_delete_body, Dates.iso(editor.date)),
+            confirmLabel = stringResource(R.string.common_delete),
+            destructive = true,
+            onConfirm = {
+                showDeleteConfirm = false
+                keyboard?.hide()
+                onDelete()
             },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text("取消") }
-            },
+            onDismiss = { showDeleteConfirm = false },
         )
     }
 }

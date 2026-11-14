@@ -15,19 +15,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Key
-import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -50,17 +50,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.hmilyld.weeklyreport.BuildConfig
+import com.hmilyld.weeklyreport.R
 import com.hmilyld.weeklyreport.data.prefs.ThemeMode
 import com.hmilyld.weeklyreport.notifications.NotificationPermission
 import com.hmilyld.weeklyreport.notifications.TaskNotifier
 import com.hmilyld.weeklyreport.ui.BiometricUi
+import com.hmilyld.weeklyreport.ui.components.ConfirmDialog
 import com.hmilyld.weeklyreport.ui.components.PaperCard
 import com.hmilyld.weeklyreport.ui.components.Pill
 import com.hmilyld.weeklyreport.ui.components.ScreenHeader
@@ -100,14 +103,21 @@ fun SettingsScreen(
             .padding(horizontal = Spacing.lg),
     ) {
         ScreenHeader(
-            kicker = "设置 · SETTINGS",
-            title = "这本周记",
-            subtitle = "服务器、账号、外观，以及手机端独有的提醒和小部件。",
+            kicker = stringResource(R.string.settings_kicker),
+            title = stringResource(R.string.settings_title),
+            subtitle = stringResource(R.string.settings_subtitle),
         )
 
-        SettingsSection("服务器") {
+        SettingsSection(stringResource(R.string.settings_section_server)) {
             Text(
-                text = "当前地址：${if (state.serverInput.isBlank()) "未设置" else state.serverInput}",
+                text = stringResource(
+                    R.string.settings_server_current,
+                    if (state.serverInput.isBlank()) {
+                        stringResource(R.string.settings_server_unset)
+                    } else {
+                        state.serverInput
+                    },
+                ),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -117,7 +127,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.sm),
-                label = { Text("服务器地址") },
+                label = { Text(stringResource(R.string.common_server_address)) },
                 singleLine = true,
                 isError = state.serverError != null,
                 supportingText = {
@@ -125,13 +135,13 @@ fun SettingsScreen(
                         state.serverError
                             ?: state.testResult
                             ?: if (BuildConfig.DEBUG) {
-                                "调试版允许局域网 HTTP；正式版仅允许 HTTPS。修改地址后会退出登录。"
+                                stringResource(R.string.settings_server_hint_debug)
                             } else {
-                                "正式版仅允许 HTTPS；修改地址后会退出登录。"
+                                stringResource(R.string.settings_server_hint_release)
                             },
                     )
                 },
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.small,
             )
             Row(
                 modifier = Modifier
@@ -148,16 +158,16 @@ fun SettingsScreen(
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                         Spacer(modifier = Modifier.size(Spacing.xs))
                     }
-                    Text("测试连接")
+                    Text(stringResource(R.string.common_test_connection))
                 }
                 Button(
                     onClick = { viewModel.saveServer(state.serverInput) },
                     modifier = Modifier.padding(start = Spacing.sm),
-                ) { Text("保存并重新登录") }
+                ) { Text(stringResource(R.string.settings_save_and_relogin)) }
             }
         }
 
-        SettingsSection("账号") {
+        SettingsSection(stringResource(R.string.settings_section_account)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
@@ -177,18 +187,22 @@ fun SettingsScreen(
                         .padding(start = Spacing.md),
                 ) {
                     Text(
-                        text = state.user?.username ?: "正在读取…",
+                        text = state.user?.username ?: stringResource(R.string.settings_reading),
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "当前登录用户",
+                            text = stringResource(R.string.settings_current_user),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         if (state.user?.role != null) {
                             Pill(
-                                text = if (state.user?.role == "admin") "管理员" else "普通用户",
+                                text = if (state.user?.role == "admin") {
+                                    stringResource(R.string.settings_role_admin)
+                                } else {
+                                    stringResource(R.string.settings_role_user)
+                                },
                                 color = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.padding(start = Spacing.xs),
                             )
@@ -199,7 +213,10 @@ fun SettingsScreen(
                     if (state.loadingUser) {
                         CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                     } else {
-                        Icon(Icons.Outlined.Refresh, contentDescription = "刷新账号")
+                        Icon(
+                            Icons.Outlined.Refresh,
+                            contentDescription = stringResource(R.string.settings_refresh_account),
+                        )
                     }
                 }
             }
@@ -219,23 +236,29 @@ fun SettingsScreen(
             ) {
                 OutlinedButton(onClick = { showPasswordDialog = true }) {
                     Icon(Icons.Outlined.Key, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Text("修改密码", modifier = Modifier.padding(start = Spacing.xs))
+                    Text(
+                        stringResource(R.string.settings_change_password),
+                        modifier = Modifier.padding(start = Spacing.xs),
+                    )
                 }
                 OutlinedButton(
                     onClick = { showLogoutConfirm = true },
-                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                    colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error,
                     ),
                 ) {
-                    Icon(Icons.Outlined.Logout, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Text("退出登录", modifier = Modifier.padding(start = Spacing.xs))
+                    Icon(Icons.AutoMirrored.Outlined.Logout, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Text(
+                        stringResource(R.string.settings_logout),
+                        modifier = Modifier.padding(start = Spacing.xs),
+                    )
                 }
             }
         }
 
-        SettingsSection("外观") {
+        SettingsSection(stringResource(R.string.settings_section_appearance)) {
             Text(
-                text = "主题",
+                text = stringResource(R.string.settings_theme),
                 style = MaterialTheme.typography.titleSmall,
             )
             Row(
@@ -251,9 +274,9 @@ fun SettingsScreen(
                         label = {
                             Text(
                                 when (mode) {
-                                    ThemeMode.SYSTEM -> "跟随系统"
-                                    ThemeMode.LIGHT -> "浅色"
-                                    ThemeMode.DARK -> "深色"
+                                    ThemeMode.SYSTEM -> stringResource(R.string.settings_theme_system)
+                                    ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
+                                    ThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
                                 },
                             )
                         },
@@ -262,7 +285,7 @@ fun SettingsScreen(
             }
         }
 
-        SettingsSection("安全") {
+        SettingsSection(stringResource(R.string.settings_section_security)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     Icons.Outlined.Fingerprint,
@@ -274,9 +297,12 @@ fun SettingsScreen(
                         .weight(1f)
                         .padding(start = Spacing.md),
                 ) {
-                    Text("生物识别解锁", style = MaterialTheme.typography.titleSmall)
                     Text(
-                        "已保存的会话需要指纹或面容才能进入；令牌只保存在 Android Keystore。",
+                        stringResource(R.string.settings_biometric_title),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    Text(
+                        stringResource(R.string.settings_biometric_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -287,12 +313,12 @@ fun SettingsScreen(
                         if (!enable) {
                             onBiometricChange(false)
                         } else if (!BiometricUi.isAvailable(context)) {
-                            onNotify("此设备没有可用的生物识别，请先在系统设置中录入指纹")
+                            onNotify(context.getString(R.string.settings_biometric_unavailable))
                         } else {
                             BiometricUi.authenticate(
                                 context = context,
-                                title = "开启生物识别解锁",
-                                subtitle = "验证一次，之后打开周记需要指纹或面容",
+                                title = context.getString(R.string.settings_biometric_prompt_title),
+                                subtitle = context.getString(R.string.settings_biometric_prompt_subtitle),
                                 onSuccess = { onBiometricChange(true) },
                                 onFailure = onNotify,
                             )
@@ -302,7 +328,7 @@ fun SettingsScreen(
             }
         }
 
-        SettingsSection("提醒与小部件") {
+        SettingsSection(stringResource(R.string.settings_section_reminders)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     Icons.Outlined.NotificationsActive,
@@ -314,15 +340,21 @@ fun SettingsScreen(
                         .weight(1f)
                         .padding(start = Spacing.md),
                 ) {
-                    Text("待办到期提醒", style = MaterialTheme.typography.titleSmall)
                     Text(
-                        "逾期和三天内到期的待办由本机通知提醒，不依赖网页。",
+                        stringResource(R.string.tasks_notification_name),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    Text(
+                        stringResource(R.string.settings_notifications_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 if (notificationsGranted) {
-                    Pill(text = "已允许", color = MaterialTheme.colorScheme.secondary)
+                    Pill(
+                        text = stringResource(R.string.settings_notifications_granted),
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
                 }
             }
             FlowRow(
@@ -336,10 +368,14 @@ fun SettingsScreen(
                 if (!notificationsGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     OutlinedButton(onClick = {
                         if (!NotificationPermission.openSettings(context)) {
-                            onNotify("无法打开系统通知设置，请手动在系统设置中允许通知")
+                            onNotify(context.getString(R.string.settings_notifications_settings_failed))
                         }
                     }) {
-                        Text("开启通知", maxLines = 1)
+                        Text(
+                            stringResource(R.string.settings_notifications_enable),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 }
                 OutlinedButton(onClick = viewModel::checkReminders) {
@@ -348,16 +384,26 @@ fun SettingsScreen(
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
                     )
-                    Text("检查提醒", modifier = Modifier.padding(start = Spacing.xs), maxLines = 1)
+                    Text(
+                        stringResource(R.string.settings_check_reminders),
+                        modifier = Modifier.padding(start = Spacing.xs),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
                 OutlinedButton(onClick = viewModel::pinWidget) {
                     Icon(Icons.Outlined.Widgets, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Text("添加小部件", modifier = Modifier.padding(start = Spacing.xs), maxLines = 1)
+                    Text(
+                        stringResource(R.string.settings_add_widget),
+                        modifier = Modifier.padding(start = Spacing.xs),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
             }
             if (!notificationsGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 Text(
-                    text = "点击「开启通知」后，在本应用的通知设置页打开开关；返回后会自动刷新状态。",
+                    text = stringResource(R.string.settings_notifications_hint),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = Spacing.xs),
@@ -365,7 +411,7 @@ fun SettingsScreen(
             }
         }
 
-        SettingsSection("离线队列") {
+        SettingsSection(stringResource(R.string.settings_section_queue)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     Icons.Outlined.CloudOff,
@@ -377,10 +423,25 @@ fun SettingsScreen(
                         .weight(1f)
                         .padding(start = Spacing.md),
                 ) {
-                    Text("待发送与冲突", style = MaterialTheme.typography.titleSmall)
                     Text(
-                        "待发送 ${state.queue.pending} 条 · 冲突 ${state.queue.conflicts} 条" +
-                            if (state.queue.failed > 0) " · 失败 ${state.queue.failed} 条" else "",
+                        stringResource(R.string.settings_queue_title),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    Text(
+                        if (state.queue.failed > 0) {
+                            stringResource(
+                                R.string.settings_queue_summary_failed,
+                                state.queue.pending,
+                                state.queue.conflicts,
+                                state.queue.failed,
+                            )
+                        } else {
+                            stringResource(
+                                R.string.settings_queue_summary,
+                                state.queue.pending,
+                                state.queue.conflicts,
+                            )
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -390,12 +451,15 @@ fun SettingsScreen(
                     enabled = state.queue.pending > 0 || state.queue.failed > 0,
                 ) {
                     Icon(Icons.Outlined.Sync, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Text("立即重试", modifier = Modifier.padding(start = Spacing.xs))
+                    Text(
+                        stringResource(R.string.settings_retry_now),
+                        modifier = Modifier.padding(start = Spacing.xs),
+                    )
                 }
             }
             if (state.queue.conflicts > 0) {
                 Text(
-                    text = "有冲突的日报不会自动覆盖服务器；请在页面顶部的提示里逐条选择。",
+                    text = stringResource(R.string.settings_queue_conflict_hint),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(top = Spacing.xs),
@@ -403,7 +467,7 @@ fun SettingsScreen(
             }
             if (state.queue.failed > 0) {
                 Text(
-                    text = "发送失败的修改仍保存在本机。检查内容后点「立即重试」，或重新编辑该项。",
+                    text = stringResource(R.string.settings_queue_failed_hint),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(top = Spacing.xs),
@@ -413,17 +477,24 @@ fun SettingsScreen(
 
         PaperCard(modifier = Modifier.padding(top = Spacing.md)) {
             Column(modifier = Modifier.padding(Spacing.lg)) {
-                Text("关于", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    stringResource(R.string.settings_about),
+                    style = MaterialTheme.typography.titleSmall,
+                )
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = Spacing.sm),
                     color = MaterialTheme.colorScheme.outlineVariant,
                 )
                 Text(
-                    text = "周记 ${BuildConfig.VERSION_NAME}（构建 ${BuildConfig.VERSION_CODE}）",
+                    text = stringResource(
+                        R.string.settings_version,
+                        BuildConfig.VERSION_NAME,
+                        BuildConfig.VERSION_CODE,
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = "数据保存在你的自托管服务器；本机只缓存日报草稿、待办和待发送队列。明文密码从不落盘。",
+                    text = stringResource(R.string.settings_about_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = Spacing.xs),
@@ -444,21 +515,16 @@ fun SettingsScreen(
     }
 
     if (showLogoutConfirm) {
-        AlertDialog(
-            onDismissRequest = { showLogoutConfirm = false },
-            title = { Text("退出登录？", style = MaterialTheme.typography.titleLarge) },
-            text = { Text("本机未发送的草稿会保留，下次登录同一账号后继续发送。") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showLogoutConfirm = false
-                    viewModel.logout()
-                }) {
-                    Text("退出", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
-                }
+        ConfirmDialog(
+            title = stringResource(R.string.settings_logout_title),
+            body = stringResource(R.string.settings_logout_body),
+            confirmLabel = stringResource(R.string.settings_logout_confirm),
+            destructive = true,
+            onConfirm = {
+                showLogoutConfirm = false
+                viewModel.logout()
             },
-            dismissButton = {
-                TextButton(onClick = { showLogoutConfirm = false }) { Text("取消") }
-            },
+            onDismiss = { showLogoutConfirm = false },
         )
     }
 }
@@ -497,11 +563,11 @@ private fun PasswordDialog(
 
     AlertDialog(
         onDismissRequest = { if (!state.changingPassword) onDismiss() },
-        title = { Text("修改密码", style = MaterialTheme.typography.titleLarge) },
+        title = { Text(stringResource(R.string.settings_change_password), style = MaterialTheme.typography.titleLarge) },
         text = {
             Column {
                 Text(
-                    text = "修改成功后，服务端会用新密码重新加密全部内容，其他设备需要重新登录。",
+                    text = stringResource(R.string.settings_password_intro),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -514,7 +580,7 @@ private fun PasswordDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = Spacing.sm),
-                    label = { Text("当前密码") },
+                    label = { Text(stringResource(R.string.settings_password_current)) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                 )
@@ -527,7 +593,7 @@ private fun PasswordDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = Spacing.sm),
-                    label = { Text("新密码（至少 8 位，含字母和数字）") },
+                    label = { Text(stringResource(R.string.settings_password_new)) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                 )
@@ -540,7 +606,7 @@ private fun PasswordDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = Spacing.sm),
-                    label = { Text("再次输入新密码") },
+                    label = { Text(stringResource(R.string.settings_password_confirm)) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                 )
@@ -563,11 +629,13 @@ private fun PasswordDialog(
                     CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                     Spacer(modifier = Modifier.size(Spacing.xs))
                 }
-                Text("修改密码")
+                Text(stringResource(R.string.settings_change_password))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !state.changingPassword) { Text("取消") }
+            TextButton(onClick = onDismiss, enabled = !state.changingPassword) {
+                Text(stringResource(R.string.common_cancel))
+            }
         },
     )
 }

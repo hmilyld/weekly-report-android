@@ -4,5 +4,7 @@
     <color name="paper">#FFF7F2E7</color>
     <color name="accent">#FFB03A2E</color>
     <color name="widget_bg">#FFF9F4E9</color>
+    <color name="widget_text_secondary">#B31C1A17</color>
+    <color name="widget_action_bg">#14B03A2E</color>
     <color name="ic_launcher_background">#FFB03A2E</color>
 </resources>
