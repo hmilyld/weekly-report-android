@@ -64,6 +64,8 @@ class UpdateChecker(
                 published = info.versionName,
                 installed = BuildConfig.VERSION_NAME,
                 skipped = settings.skippedUpdateVersion(),
+                publishedCode = info.versionCode,
+                installedCode = BuildConfig.VERSION_CODE,
             )
         ) {
             // Either nothing newer, or exactly the release the user postponed.
@@ -83,10 +85,15 @@ class UpdateChecker(
      * The manifest is tried first so a normal check costs no API quota; only a
      * missing or unreadable manifest reaches the API.
      */
-    suspend fun fetchLatest(): UpdateInfo? = fetchManifest() ?: fetchLatestFromApi()
+    suspend fun fetchLatest(): UpdateInfo? =
+        UpdateFallback.resolve(manifest = fetchManifest(), api = { fetchLatestFromApi() })
 
-    /** Null when the asset is absent or unreadable, so the caller can fall back. */
-    private suspend fun fetchManifest(): UpdateInfo? =
+    /**
+     * Absent or unusable manifests report [UpdateFallback.ManifestOutcome.Unusable]
+     * so the API gets a chance; a request that never completed reports
+     * [UpdateFallback.ManifestOutcome.Failed] and is not retried.
+     */
+    private suspend fun fetchManifest(): UpdateFallback.ManifestOutcome =
         withContext(Dispatchers.IO) {
             val request = Request.Builder()
                 .url(manifestUrl)
@@ -94,9 +101,20 @@ class UpdateChecker(
                 .header("User-Agent", "weekly-report-android/${BuildConfig.VERSION_NAME}")
                 .get()
                 .build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return@withContext null
-                UpdateManifest.parse(response.body?.string().orEmpty())
+            try {
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        return@withContext UpdateFallback.ManifestOutcome.Unusable
+                    }
+                    val info = UpdateManifest.parse(response.body?.string().orEmpty())
+                    if (info == null) {
+                        UpdateFallback.ManifestOutcome.Unusable
+                    } else {
+                        UpdateFallback.ManifestOutcome.Found(info)
+                    }
+                }
+            } catch (error: IOException) {
+                UpdateFallback.ManifestOutcome.Failed(error)
             }
         }
 

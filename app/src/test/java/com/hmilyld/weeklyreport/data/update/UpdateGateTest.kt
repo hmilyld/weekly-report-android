@@ -98,4 +98,84 @@ class UpdateGateTest {
         assertTrue(UpdateGate.shouldOffer(false, "1.1.0", "1.0.0", "garbage"))
         assertTrue(UpdateGate.shouldOffer(false, "1.1.0", "1.0.0", ""))
     }
+
+    @Test
+    fun `a higher build number alone counts as an update`() {
+        // A hotfix that re-releases 1.1.0 with a new versionCode.
+        assertTrue(
+            UpdateGate.shouldOffer(
+                force = false,
+                published = "1.1.0",
+                installed = "1.1.0",
+                skipped = null,
+                publishedCode = 5,
+                installedCode = 4,
+            ),
+        )
+    }
+
+    @Test
+    fun `an equal or lower build number is not an update`() {
+        assertFalse(
+            UpdateGate.shouldOffer(
+                false,
+                "1.1.0",
+                "1.1.0",
+                null,
+                publishedCode = 4,
+                installedCode = 4,
+            ),
+        )
+        assertFalse(
+            UpdateGate.shouldOffer(
+                false,
+                "1.1.0",
+                "1.1.0",
+                null,
+                publishedCode = 3,
+                installedCode = 4,
+            ),
+        )
+    }
+
+    @Test
+    fun `the build number never overrides a lower version name`() {
+        // 0.9.0 with a huge code is still older than 1.0.0.
+        assertFalse(
+            UpdateGate.shouldOffer(
+                false,
+                "0.9.0",
+                "1.0.0",
+                null,
+                publishedCode = 99,
+                installedCode = 1,
+            ),
+        )
+    }
+
+    @Test
+    fun `a missing build number falls back to the version name alone`() {
+        // The API fallback cannot report a versionCode, so equal names must not
+        // be treated as an update just because the code is unknown.
+        assertFalse(
+            UpdateGate.shouldOffer(
+                false,
+                "1.0.0",
+                "1.0.0",
+                null,
+                publishedCode = 0,
+                installedCode = 3,
+            ),
+        )
+        assertTrue(
+            UpdateGate.shouldOffer(
+                false,
+                "1.0.1",
+                "1.0.0",
+                null,
+                publishedCode = 0,
+                installedCode = 3,
+            ),
+        )
+    }
 }

@@ -97,32 +97,46 @@ jobs:
       #
       # An unsigned APK cannot be installed over the release it would replace,
       # so no manifest is published in that case: the app then falls back to
-      # the API and simply offers the release page.
+      # the API and simply offers the release page. The asset list is built from
+      # what this step actually produced, so the published files always match
+      # the manifest and a missing APK still fails the release.
       - name: Build update.json
         run: |
           if [ ! -f keystore.properties ]; then
             echo "Unsigned build; skipping update.json so clients keep using the API."
+            echo "RELEASE_FILES<<EOF" >> "$GITHUB_ENV"
+            echo "app/build/outputs/apk/release/*.apk" >> "$GITHUB_ENV"
+            echo "EOF" >> "$GITHUB_ENV"
             exit 0
+          fi
+          # Exactly one APK is expected; more than one would make the manifest
+          # point at a file the release may not carry under that name.
+          apks=($(ls app/build/outputs/apk/release/*.apk))
+          if [ "${#apks[@]}" -ne 1 ]; then
+            echo "::error::Expected exactly one release APK, found ${#apks[@]}"
+            exit 1
           fi
           version="$(sed -n 's/^app\.versionName=//p' gradle.properties)"
           version_code="$(sed -n 's/^app\.versionCode=//p' gradle.properties)"
-          apk="$(ls app/build/outputs/apk/release/*.apk | head -n 1)"
           node tools/write-update-manifest.js \
             --out update.json \
             --version "$version" \
             --code "$version_code" \
             --tag "${GITHUB_REF_NAME}" \
-            --apk "$apk" \
+            --apk "${apks[0]}" \
             --notes release-notes.md \
             --repo "${GITHUB_REPOSITORY}"
+          echo "RELEASE_FILES<<EOF" >> "$GITHUB_ENV"
+          echo "${apks[0]}" >> "$GITHUB_ENV"
+          echo "update.json" >> "$GITHUB_ENV"
+          echo "EOF" >> "$GITHUB_ENV"
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           name: 周记 ${{ github.ref_name }}
           body_path: release-notes.md
-          files: |
-            app/build/outputs/apk/release/*.apk
-            update.json
-          # update.json is absent for an unsigned build, which is expected.
-          fail_on_unmatched_files: false
+          # Built by the previous step: the APK alone for an unsigned build,
+          # the APK plus update.json otherwise.
+          files: ${{ env.RELEASE_FILES }}
+          fail_on_unmatched_files: true

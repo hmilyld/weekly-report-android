@@ -49,8 +49,10 @@ object UpdateInstaller {
      * -1 while the total size is unknown) and is called on the IO dispatcher.
      *
      * When the manifest published a SHA-256 the file is verified before it is
-     * handed on: a truncated or tampered download is deleted and rejected
-     * instead of reaching the package installer.
+     * handed on: a truncated download, or one whose bytes do not match the
+     * release, is deleted and rejected instead of reaching the installer. The
+     * hash comes from the same manifest as the URL, so it catches transfer
+     * damage and manifest/asset mismatches, not a malicious manifest.
      */
     suspend fun download(
         context: Context,
@@ -86,8 +88,15 @@ object UpdateInstaller {
                             digest.update(buffer, 0, read)
                             written += read
                             // -1 keeps the bar indeterminate while the total is
-                            // unknown, instead of jumping around.
-                            onProgress(if (total > 0) (written.toFloat() / total) else -1f)
+                            // unknown; coerceIn guards against a server that
+                            // sends more bytes than it announced.
+                            onProgress(
+                                if (total > 0) {
+                                    (written.toFloat() / total).coerceIn(0f, 1f)
+                                } else {
+                                    -1f
+                                },
+                            )
                         }
                         output.flush()
                     }
@@ -119,6 +128,10 @@ object UpdateInstaller {
     /**
      * Launches the system installer for [apk]. Returns false when no installer
      * activity accepted the intent.
+     *
+     * The file must survive this call: [Intent.ACTION_VIEW] only hands the URI
+     * to the installer, which reads it when the user confirms. Deleting the APK
+     * here would make that confirmation fail with a system-level error.
      */
     fun install(
         context: Context,
@@ -136,7 +149,7 @@ object UpdateInstaller {
         }.getOrDefault(false)
     }
 
-    /** Removes leftover APKs; called after a finished download or install. */
+    /** Removes leftover APKs; called before a new download, never right after installing. */
     fun clearCache(context: Context) {
         File(context.cacheDir, "updates").listFiles()?.forEach { it.delete() }
     }
@@ -145,6 +158,21 @@ object UpdateInstaller {
     fun clearPartial(context: Context) {
         File(context.cacheDir, "updates").listFiles()
             ?.filter { it.name.endsWith(".part") }
+            ?.forEach { it.delete() }
+    }
+
+    /**
+     * Drops every APK except [keep].
+     *
+     * The installed file is only released once the user leaves the installer,
+     * so cleanup has to preserve the one just handed over and discard the rest.
+     */
+    fun clearCacheExcept(
+        context: Context,
+        keep: File?,
+    ) {
+        File(context.cacheDir, "updates").listFiles()
+            ?.filter { it != keep }
             ?.forEach { it.delete() }
     }
 }

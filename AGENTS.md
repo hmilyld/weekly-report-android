@@ -66,7 +66,8 @@ AppDatabase (SQLite) ──► outbox ──► SyncEngine ──► ApiClient
 | `data/sync/SyncEngine.kt` | 按序补发、冲突检测、任务 revision 处理 |
 | `data/sync/SyncScheduler.kt` | WorkManager 唯一队列（`APPEND_OR_REPLACE`） |
 | `data/update/UpdateChecker.kt` | 发布渠道查询：优先 `update.json`，缺失时回退 API；节流与限流识别 |
-| `data/update/UpdateGate.kt` | 检查节流与「是否提示」的纯逻辑（可单测） |
+| `data/update/UpdateGate.kt` | 检查节流、版本比较（语义版本 + 构建号）与「是否提示」的纯逻辑 |
+| `data/update/UpdateFallback.kt` | 清单 → API 的回退决策（纯逻辑，可单测） |
 | `data/update/UpdateManifest.kt` | `update.json` → `UpdateInfo`（纯逻辑，可单测） |
 | `data/update/ReleaseParser.kt` | GitHub API 发布 JSON → `UpdateInfo`（回退路径） |
 | `data/update/UpdateInstaller.kt` | APK 下载、sha256 校验、`FileProvider`、系统安装器与授权入口 |
@@ -199,7 +200,8 @@ $env:PYTHONIOENCODING = 'utf-8'
 - API 错误 detail 与 `_decryption_failed` 检测；
 - 版本号解析与比较（`SemVer`：前缀、预发布后缀、位数不同的版本、乱码输入）；
 - GitHub 发布 JSON 解析（`ReleaseParser`：真实响应、非 APK 资产、缺少 APK、错误负载）；
-- 更新检查节流与提示规则（`UpdateGate`：首次检查、24h 窗口、开关、时钟回拨、跳过版本、手动检查绕过）；
+- 更新检查节流与提示规则（`UpdateGate`：首次检查、24h 窗口、开关、时钟回拨、跳过版本、手动检查绕过、构建号比较）；
+- 清单 → API 的回退决策（`UpdateFallback`：清单可用时不请求 API、缺失/损坏时回退、网络失败不重试）；
 - `update.json` 清单解析（`UpdateManifest`：完整字段、缺省字段、tag 推导、哈希归一化、错误负载拒绝）；
 - 发布说明的 Markdown 简化渲染（`MarkdownLite`：标题、列表、加粗、行内代码、链接、围栏代码、空行折叠）。
 

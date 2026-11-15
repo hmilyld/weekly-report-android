@@ -21,8 +21,8 @@ object UpdateManifest {
         val root = runCatching { ApiPayloads.json.parseToJsonElement(raw) }.getOrNull()
             as? JsonObject ?: return null
         val versionName = root.string("versionName")?.takeIf { it.isNotBlank() } ?: return null
-        // A manifest with neither a parseable name nor a code cannot be compared
-        // against the installed build, so it is not a usable answer.
+        // The version name is what gets compared, so a manifest without a
+        // parseable one is not a usable answer and the caller falls back.
         val version = SemVer.parse(versionName) ?: return null
         val versionCode = root.string("versionCode")?.toIntOrNull() ?: 0
         val tag = root.string("tag")?.takeIf { it.isNotBlank() } ?: "v$version"

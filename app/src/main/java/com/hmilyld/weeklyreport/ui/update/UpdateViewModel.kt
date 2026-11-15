@@ -107,6 +107,9 @@ class UpdateViewModel(
                             promptVisible = true,
                             phase = UpdatePhase.Idle,
                             error = null,
+                            // A stale "cannot open the browser" from the previous
+                            // prompt must not ride along with a fresh one.
+                            notice = null,
                         )
                     }
 
@@ -165,6 +168,10 @@ class UpdateViewModel(
         val info = _state.value.available ?: return
         if (_state.value.phase is UpdatePhase.Downloading) return
         viewModelScope.launch {
+            // A new download replaces whatever an earlier attempt left behind,
+            // so the cache cannot grow one APK per release the user saw.
+            UpdateInstaller.clearCache(appContext)
+            downloadedApk = null
             _state.update {
                 it.copy(phase = UpdatePhase.Downloading(0f), error = null, notice = null)
             }
@@ -221,9 +228,9 @@ class UpdateViewModel(
             }
             return
         }
-        // The installer owns the file from here; anything left over from an
-        // earlier attempt (or a newer release) is dead weight in the cache.
-        UpdateInstaller.clearCache(appContext)
+        // The installer only received a URI; it reads the file when the user
+        // confirms. Keep this APK and drop anything else from earlier attempts.
+        UpdateInstaller.clearCacheExcept(appContext, keep = apk)
         downloadedApk = null
         hidePrompt()
     }
