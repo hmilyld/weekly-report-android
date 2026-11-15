@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.material.icons.outlined.SystemUpdateAlt
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -69,6 +70,7 @@ import com.hmilyld.weeklyreport.ui.components.PaperCard
 import com.hmilyld.weeklyreport.ui.components.Pill
 import com.hmilyld.weeklyreport.ui.components.ScreenHeader
 import com.hmilyld.weeklyreport.ui.theme.Spacing
+import com.hmilyld.weeklyreport.ui.update.UpdateViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -79,9 +81,15 @@ fun SettingsScreen(
     onThemeChange: (ThemeMode) -> Unit,
     onBiometricChange: (Boolean) -> Unit,
     onNotify: (String) -> Unit,
+    updateViewModel: UpdateViewModel,
 ) {
     val state by viewModel.state.collectAsState()
+    val updateState by updateViewModel.state.collectAsState()
+    val autoUpdate by viewModel.autoUpdateCheck.collectAsState()
     val context = LocalContext.current
+    // Debug builds carry the `.debug` applicationId, so they can never replace
+    // an installed release; a mock feed still needs the controls for testing.
+    val updateAvailableInThisBuild = !BuildConfig.DEBUG || BuildConfig.UPDATE_FEED_URL.isNotBlank()
     var showPasswordDialog by remember { mutableStateOf(false) }
     var showLogoutConfirm by remember { mutableStateOf(false) }
     var notificationsGranted by remember { mutableStateOf(TaskNotifier.hasPermission(context)) }
@@ -503,6 +511,101 @@ fun SettingsScreen(
                     text = stringResource(R.string.settings_queue_failed_hint),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = Spacing.xs),
+                )
+            }
+        }
+
+        SettingsSection(stringResource(R.string.settings_section_update)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Outlined.SystemUpdateAlt,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = Spacing.md),
+                ) {
+                    Text(
+                        stringResource(R.string.settings_update_auto_title),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    Text(
+                        stringResource(R.string.settings_update_auto_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = autoUpdate,
+                    onCheckedChange = viewModel::setAutoUpdateCheck,
+                    enabled = updateAvailableInThisBuild,
+                )
+            }
+            Text(
+                text = stringResource(R.string.settings_update_channel),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = Spacing.sm),
+            )
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = Spacing.sm),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                maxItemsInEachRow = 2,
+            ) {
+                OutlinedButton(
+                    onClick = updateViewModel::checkManually,
+                    enabled = updateAvailableInThisBuild && !updateState.checking,
+                ) {
+                    if (updateState.checking) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                        )
+                        Spacer(modifier = Modifier.size(Spacing.xs))
+                    } else {
+                        Icon(
+                            Icons.Outlined.SystemUpdateAlt,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(modifier = Modifier.size(Spacing.xs))
+                    }
+                    Text(
+                        stringResource(
+                            if (updateState.checking) {
+                                R.string.settings_update_checking
+                            } else {
+                                R.string.settings_update_check_now
+                            },
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (updateState.available != null) {
+                    OutlinedButton(onClick = updateViewModel::reopenPrompt) {
+                        Text(
+                            stringResource(
+                                R.string.settings_update_view,
+                                updateState.available?.versionName.orEmpty(),
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+            if (!updateAvailableInThisBuild) {
+                Text(
+                    text = stringResource(R.string.settings_update_unavailable_debug),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = Spacing.xs),
                 )
             }

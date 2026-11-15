@@ -78,6 +78,8 @@ import com.hmilyld.weeklyreport.ui.screens.settings.SettingsViewModel
 import com.hmilyld.weeklyreport.ui.screens.tasks.TasksScreen
 import com.hmilyld.weeklyreport.ui.screens.tasks.TasksViewModel
 import com.hmilyld.weeklyreport.ui.theme.Spacing
+import com.hmilyld.weeklyreport.ui.update.UpdatePrompt
+import com.hmilyld.weeklyreport.ui.update.UpdateViewModel
 import com.hmilyld.weeklyreport.util.ListInput
 import java.time.LocalDate
 import kotlinx.coroutines.flow.StateFlow
@@ -131,51 +133,65 @@ fun AppRoot(
     val problem by appViewModel.problem.collectAsState()
     val theme by appViewModel.theme.collectAsState()
 
-    when (val current = session) {
-        is SessionState.LoggedOut -> {
-            val loginViewModel: LoginViewModel = viewModel(
-                factory = SimpleVmFactory {
-                    LoginViewModel(container.settings, container.session, container.api)
-                },
-            )
-            LoginScreen(
-                viewModel = loginViewModel,
-                problem = problem,
-                onNotify = {},
-            )
-        }
+    // The release channel is independent of the login session, so the prompt
+    // sits above the session switch and can appear on the login screen too.
+    val updateViewModel: UpdateViewModel = viewModel(
+        factory = SimpleVmFactory {
+            UpdateViewModel(container.updateChecker, container.appContext)
+        },
+    )
+    LaunchedEffect(Unit) { updateViewModel.checkOnStart() }
 
-        is SessionState.Locked -> {
-            val context = LocalContext.current
-            val available = remember { BiometricUi.isAvailable(context) }
-            val unlockTitle = stringResource(R.string.app_biometric_unlock_title)
-            LockScreen(
-                username = current.username,
-                biometricAvailable = available,
-                onUnlock = {
-                    BiometricUi.authenticate(
-                        context = context,
-                        title = unlockTitle,
-                        subtitle = current.username,
-                        onSuccess = { container.session.unlock() },
-                        onFailure = { },
-                    )
-                },
-                onLoginWithPassword = { appViewModel.logout() },
-                onNotify = {},
-            )
-        }
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (val current = session) {
+            is SessionState.LoggedOut -> {
+                val loginViewModel: LoginViewModel = viewModel(
+                    factory = SimpleVmFactory {
+                        LoginViewModel(container.settings, container.session, container.api)
+                    },
+                )
+                LoginScreen(
+                    viewModel = loginViewModel,
+                    problem = problem,
+                    onNotify = {},
+                )
+            }
 
-        is SessionState.LoggedIn -> {
-            LoggedInRoot(
-                container = container,
-                theme = theme,
-                appViewModel = appViewModel,
-                widgetRequest = widgetRequest,
-                onWidgetRequestConsumed = onWidgetRequestConsumed,
-            )
+            is SessionState.Locked -> {
+                val context = LocalContext.current
+                val available = remember { BiometricUi.isAvailable(context) }
+                val unlockTitle = stringResource(R.string.app_biometric_unlock_title)
+                LockScreen(
+                    username = current.username,
+                    biometricAvailable = available,
+                    onUnlock = {
+                        BiometricUi.authenticate(
+                            context = context,
+                            title = unlockTitle,
+                            subtitle = current.username,
+                            onSuccess = { container.session.unlock() },
+                            onFailure = { },
+                        )
+                    },
+                    onLoginWithPassword = { appViewModel.logout() },
+                    onNotify = {},
+                )
+            }
+
+            is SessionState.LoggedIn -> {
+                LoggedInRoot(
+                    container = container,
+                    theme = theme,
+                    appViewModel = appViewModel,
+                    updateViewModel = updateViewModel,
+                    widgetRequest = widgetRequest,
+                    onWidgetRequestConsumed = onWidgetRequestConsumed,
+                )
+            }
         }
     }
+
+    UpdatePrompt(viewModel = updateViewModel)
 }
 
 @Composable
@@ -183,6 +199,7 @@ private fun LoggedInRoot(
     container: AppContainer,
     theme: ThemeMode,
     appViewModel: AppViewModel,
+    updateViewModel: UpdateViewModel,
     widgetRequest: StateFlow<WidgetOpen?>,
     onWidgetRequestConsumed: () -> Unit,
 ) {
@@ -251,6 +268,7 @@ private fun LoggedInRoot(
             reportsViewModel.messages,
             settingsViewModel.messages,
             appViewModel.messages,
+            updateViewModel.messages,
         ).collect { message ->
             snackbarHostState.showSnackbar(
                 message.resolve(snackbarContext),
@@ -413,6 +431,7 @@ private fun LoggedInRoot(
                                         onThemeChange = appViewModel::setTheme,
                                         onBiometricChange = settingsViewModel::setBiometricEnabled,
                                         onNotify = notify,
+                                        updateViewModel = updateViewModel,
                                     )
                                 }
                             }

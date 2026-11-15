@@ -65,6 +65,13 @@ AppDatabase (SQLite) ──► outbox ──► SyncEngine ──► ApiClient
 | `data/local/AppDatabase.kt` | 日报/待办缓存、outbox、冲突、报告缓存 |
 | `data/sync/SyncEngine.kt` | 按序补发、冲突检测、任务 revision 处理 |
 | `data/sync/SyncScheduler.kt` | WorkManager 唯一队列（`APPEND_OR_REPLACE`） |
+| `data/update/UpdateChecker.kt` | GitHub Releases 查询、24h 节流、限流识别 |
+| `data/update/UpdateGate.kt` | 检查节流与「是否提示」的纯逻辑（可单测） |
+| `data/update/ReleaseParser.kt` | 发布 JSON → `UpdateInfo`（纯逻辑，可单测） |
+| `data/update/UpdateInstaller.kt` | APK 下载、`FileProvider`、系统安装器与授权入口 |
+| `util/SemVer.kt` | 版本号解析与比较（纯逻辑，可单测） |
+| `util/MarkdownLite.kt` | 发布说明的极简 Markdown 渲染（纯逻辑，可单测） |
+| `ui/update/*` | 更新弹窗（下载进度、授权、安装）与状态机 |
 | `data/repo/*` | 面向 ViewModel 的写入/读取入口 |
 | `ui/AppRoot.kt` | 登录/锁定/四页导航、全局队列横幅与冲突对话框 |
 | `ui/components/Common.kt` | `ScreenHeader`、卡片、Banner、确认框等 |
@@ -188,7 +195,11 @@ $env:PYTHONIOENCODING = 'utf-8'
 - 有序列表续号、重编号、末尾空条目、IME 组合态；
 - URL 校验（Release 拒绝 HTTP，Debug 允许）；
 - 重放冲突规则；
-- API 错误 detail 与 `_decryption_failed` 检测。
+- API 错误 detail 与 `_decryption_failed` 检测；
+- 版本号解析与比较（`SemVer`：前缀、预发布后缀、位数不同的版本、乱码输入）；
+- GitHub 发布 JSON 解析（`ReleaseParser`：真实响应、非 APK 资产、缺少 APK、错误负载）；
+- 更新检查节流与提示规则（`UpdateGate`：首次检查、24h 窗口、开关、时钟回拨、跳过版本、手动检查绕过）；
+- 发布说明的 Markdown 简化渲染（`MarkdownLite`：标题、列表、加粗、行内代码、链接、围栏代码、空行折叠）。
 
 新增纯逻辑时优先放 `util/` 或 `data/sync/`，补 JUnit 测试；不要用需要 Android 运行时的类。测试数量变化时更新 README 中的数字。
 
@@ -197,6 +208,7 @@ $env:PYTHONIOENCODING = 'utf-8'
 - 模拟器：`E:\Androiddev\sdk\emulator\emulator.exe -avd Pixel_8_API_35 -no-window -gpu swiftshader_indirect`。
 - 真机：无线调试需先 `adb pair IP:PAIR_PORT CODE`，再 `adb connect IP:CONNECT_PORT`（两个端口不同，连接端口在「无线调试」主页面）。
 - 验收重点：登录 → 日报保存 → 杀进程重开 → 删除 → 翻周；待办全流程；周报 404/生成/编辑/分享；离线写→联网补发；冲突提示；后端重启后强制重新登录；小部件、通知、分享、生物识别。
+- 更新流程：用 `tools/mock-update-feed.js` 起本地发布源，`-Papp.updateFeedUrl=http://10.0.2.2:18082/latest` 构建 Debug 包，走查「启动弹窗 → 下载进度 → 授权 → 系统安装器 → 稍后不再提示 → 取消不记录跳过」；`tools/mock-backend.js` 可起最小后端用于登录后进入设置页。Release 构建会忽略该参数（更新源固定为空）。
 - `evidence/` 只保留在本地，**不要提交**：真机截图可能包含个人通知、头像、内网地址等隐私。
 - 生物识别需要用户在真机上实际按压指纹；模拟器可用 `adb emu finger touch 1`。
 
@@ -228,5 +240,7 @@ $env:PYTHONIOENCODING = 'utf-8'
 3. 提交改动（`chore: release x.y.z`）。
 4. 打附注标签并推送：`git tag -a vx.y.z -m "周记 x.y.z"` → `git push origin vx.y.z`。
 5. 标签推送触发 `.github/workflows/release.yml`：校验版本号与 CHANGELOG、跑 Debug/Release 两套校验、构建 APK、创建 GitHub Release。仓库配置 `KEYSTORE_BASE64`、`KEYSTORE_PASSWORD`、`KEY_ALIAS`、`KEY_PASSWORD` 四个 secret 时产物已签名，否则发布说明会标注「未签名」。
+
+注意：应用内自动更新要求发布包与已安装版本**同一密钥签名**，所以上面四个 secret 必须与本地 `keystore.properties` 指向的 keystore 一致。轮换 keystore 后，老用户只能手动卸载重装，不能覆盖升级。仓库当前的四个 secret 已配置为本仓库 `app/keystore/release.jks`（别名 `weeklyreport`）。发布说明就是更新弹窗里展示的正文，因此 CHANGELOG 段落要写成面向用户的话。
 
 普通提交与 PR 仍然只跑 `.github/workflows/android.yml`（不发布）。

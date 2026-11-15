@@ -36,7 +36,30 @@
 - 登录 / 退出、当前用户、修改密码；
 - 主题跟随系统 / 浅色 / 深色；
 - 生物识别开关、通知权限入口、小部件添加、离线队列状态；
+- 更新：自动检查开关、手动检查、当前版本与发布渠道；
 - 版本号与安全说明。
+
+## 自动更新
+
+Release 版本通过 GitHub Releases 更新，不依赖 Google Play 或应用商店：
+
+- 启动时最多每天检查一次最新发布（`/repos/hmilyld/weekly-report-android/releases/latest`），24 小时内不重复请求，避免匿名调用 GitHub API 的 60 次/小时限流；设置页可随时手动检查，手动检查不受节流影响。
+- 只有成功拿到 GitHub 的响应才记录检查时间：网络不通不会让下一次检查被压后 24 小时；被限流（403/429）则退避一天，避免每次启动都去撞墙。
+- 发现 `tag_name` 的语义版本高于本机 `versionName` 时弹窗展示版本号与发布说明，发布说明按 Markdown 简化渲染（标题、列表、加粗、行内代码、链接）。「稍后」忽略该版本（记住版本号，直到出现更新的版本才再提示）；「取消」或返回键只关闭弹窗，不记录忽略。
+- 「下载」把 APK 流式写入 `cache/updates` 并显示进度；下载使用独立的 OkHttp 客户端，只限制单次读超时，慢速链路上不会因整体超时被截断。安装成功后清理缓存目录。
+- 首次安装需要用户允许「安装未知应用」；授权后回到应用会自动刷新按钮状态。APK 通过 `FileProvider`（`${applicationId}.updates`）交给系统安装器。
+- 覆盖安装要求签名一致：CI 使用仓库 secrets 里的 keystore 构建 Release，见 `AGENTS.md` 的发布流程。Debug 包名带 `.debug`，不参与更新检查。
+- 网络失败、限流或解析失败都不打扰用户，错误只在更新弹窗或手动检查时提示。
+- `UPDATE_FEED_URL` 只是 Debug 的测试接缝：Release 构建在 `app/build.gradle.kts` 里被硬编码为空，即使误传 `-Papp.updateFeedUrl` 也只会走真实 GitHub 地址。
+
+本地验证整条链路（无需发布新版本）：
+
+```bash
+node tools/mock-update-feed.js 18082 app/build/outputs/apk/debug/app-debug.apk v9.9.9
+./gradlew :app:assembleDebug -Papp.updateFeedUrl=http://10.0.2.2:18082/latest
+```
+
+`-Papp.updateFeedUrl` 会写入 `BuildConfig.UPDATE_FEED_URL`；不传该参数时始终使用真实的 GitHub 发布地址。
 
 ## 离线与冲突
 
@@ -126,12 +149,13 @@ app/src/main/java/com/hmilyld/weeklyreport/
 │   ├── prefs/               服务器地址、主题、生物识别等设置
 │   ├── secure/              Keystore 加密 token
 │   ├── repo/                日报 / 待办 / 报告仓库
-│   └── sync/                补发引擎、WorkManager、冲突规则
+│   ├── sync/                补发引擎、WorkManager、冲突规则
+│   └── update/              GitHub Releases 检查、APK 下载与安装
 ├── network/                 OkHttp + kotlinx.serialization
 ├── notifications/           本地到期提醒
 ├── widget/                  今日日报小部件
-├── ui/                      Compose 主题、组件与页面
-└── util/                    日期、列表输入、URL 规则
+├── ui/                      Compose 主题、组件与页面（含更新弹窗）
+└── util/                    日期、列表输入、URL 规则、版本比较
 ```
 
 ## 文档
@@ -139,7 +163,11 @@ app/src/main/java/com/hmilyld/weeklyreport/
 - `AGENTS.md`：给 AI 代理和维护者的项目说明、架构约束、命令与验收清单。
 - `docker-compose.local.yml`：独立本地后端编排。
 - `tools/mock-llm.js`：契约验证用 mock。
+- `tools/mock-update-feed.js`：模拟 GitHub 发布源，用于走查应用内更新。
+- `tools/mock-backend.js`：最小后端，用于登录后进入设置页验证。
 
 ## 开发状态
 
 核心功能、离线队列、冲突处理、密钥缓存恢复和四个原生能力已实现，并在模拟器上完成主要走查；Release 已使用本地演示密钥签名。真机上的完整逐项走查、真实 LLM 生成质量、以及使用 docker-compose 的完整后端验收仍需在相应环境中补充。
+
+应用内更新已在模拟器上验证：更新弹窗、下载进度、`FileProvider` 交接系统安装器、授权跳转与返回刷新、「稍后」忽略同一版本。真实发布链路（推送标签 → CI 签名构建 → GitHub Release → 客户端覆盖升级）需要在下一个版本发布时验证。

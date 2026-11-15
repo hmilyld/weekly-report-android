@@ -235,6 +235,12 @@ class SettingsViewModel(
         }
     }
 
+    val autoUpdateCheck: StateFlow<Boolean> = container.settings.autoUpdateCheck
+
+    fun setAutoUpdateCheck(enabled: Boolean) {
+        container.settings.setAutoUpdateCheck(enabled)
+    }
+
     fun checkReminders() {
         viewModelScope.launch {
             val count = withContext(Dispatchers.IO) {

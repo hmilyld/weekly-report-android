@@ -72,6 +72,33 @@ class SettingsStore(
         prefs.edit { putString(KEY_LOGIN_PROBLEM, message.orEmpty()) }
     }
 
+    // ─── Update channel ─────────────────────────────────
+    // A self-hosted app updates through its own GitHub releases, so the check
+    // state lives next to the other settings rather than in the database.
+
+    private val _autoUpdateCheck = MutableStateFlow(prefs.getBoolean(KEY_AUTO_UPDATE, true))
+    val autoUpdateCheck: StateFlow<Boolean> = _autoUpdateCheck.asStateFlow()
+
+    fun autoUpdateCheckValue(): Boolean = _autoUpdateCheck.value
+
+    fun setAutoUpdateCheck(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_AUTO_UPDATE, enabled) }
+        _autoUpdateCheck.value = enabled
+    }
+
+    fun lastUpdateCheckAt(): Long = prefs.getLong(KEY_LAST_UPDATE_CHECK, 0L)
+
+    fun setLastUpdateCheckAt(millis: Long) {
+        prefs.edit { putLong(KEY_LAST_UPDATE_CHECK, millis) }
+    }
+
+    /** The version the user asked not to be reminded about again. */
+    fun skippedUpdateVersion(): String = prefs.getString(KEY_SKIPPED_UPDATE, "").orEmpty()
+
+    fun setSkippedUpdateVersion(version: String?) {
+        prefs.edit { putString(KEY_SKIPPED_UPDATE, version.orEmpty()) }
+    }
+
     companion object {
         private const val KEY_SERVER_BASE = "server_base"
         private const val KEY_THEME = "theme"
@@ -79,5 +106,8 @@ class SettingsStore(
         private const val KEY_LAST_USERNAME = "last_username"
         private const val KEY_LAST_DEADLINE_NOTICE = "last_deadline_notice"
         private const val KEY_LOGIN_PROBLEM = "login_problem"
+        private const val KEY_AUTO_UPDATE = "auto_update_check"
+        private const val KEY_LAST_UPDATE_CHECK = "last_update_check"
+        private const val KEY_SKIPPED_UPDATE = "skipped_update_version"
     }
 }

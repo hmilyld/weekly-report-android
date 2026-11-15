@@ -16,6 +16,22 @@ val keystoreProps =
         }
     }
 
+// Test seam only. Release builds pin this to an empty string below, so a stray
+// entry in gradle.properties can never redirect a published APK's update feed
+// to another host. Quotes and backslashes are escaped so the generated Java
+// stays valid whatever the caller passes.
+val updateFeedUrl: Provider<String> =
+    providers.gradleProperty("app.updateFeedUrl").orElse("").map { raw ->
+        val trimmed = raw.trim()
+        require(
+            trimmed.isEmpty() || trimmed.startsWith("http://") || trimmed.startsWith("https://"),
+        ) { "app.updateFeedUrl must be an http(s) URL, got: $trimmed" }
+        trimmed.replace("\\", "\\\\").replace("\"", "\\\"")
+    }
+
+/** Builds a `buildConfigField` value for a string, quoted and escaped. */
+fun buildConfigString(value: String): String = "\"$value\""
+
 android {
     namespace = "com.hmilyld.weeklyreport"
     compileSdk = 35
@@ -28,6 +44,10 @@ android {
         versionName = providers.gradleProperty("app.versionName").get()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
+        // Testing seam: leave empty for the real GitHub release feed. A local
+        // mock feed can be injected with -Papp.updateFeedUrl=... so the update
+        // flow can be walked through on an emulator without a published tag.
+        buildConfigField("String", "UPDATE_FEED_URL", buildConfigString(updateFeedUrl.get()))
     }
 
     signingConfigs {
@@ -53,6 +73,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            // A published APK must only ever talk to the real release feed.
+            buildConfigField("String", "UPDATE_FEED_URL", buildConfigString(""))
             if (keystorePropsFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }

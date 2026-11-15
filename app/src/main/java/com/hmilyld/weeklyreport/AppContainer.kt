@@ -11,6 +11,7 @@ import com.hmilyld.weeklyreport.data.repo.TaskRepository
 import com.hmilyld.weeklyreport.data.secure.SecureTokenStore
 import com.hmilyld.weeklyreport.data.sync.SyncEngine
 import com.hmilyld.weeklyreport.data.sync.SyncScheduler
+import com.hmilyld.weeklyreport.data.update.UpdateChecker
 import com.hmilyld.weeklyreport.network.ApiClient
 import com.hmilyld.weeklyreport.notifications.TaskNotifier
 import com.hmilyld.weeklyreport.notifications.TaskReminderWorker
@@ -38,6 +39,7 @@ class AppContainer(
     private val tokenStore = SecureTokenStore(appContext)
     val api = ApiClient(settings)
     val session = SessionManager(settings, tokenStore, api)
+    val updateChecker = UpdateChecker(settings)
     private val scheduler = SyncScheduler(appContext)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
