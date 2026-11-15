@@ -43,23 +43,31 @@
 
 Release 版本通过 GitHub Releases 更新，不依赖 Google Play 或应用商店：
 
-- 启动时最多每天检查一次最新发布（`/repos/hmilyld/weekly-report-android/releases/latest`），24 小时内不重复请求，避免匿名调用 GitHub API 的 60 次/小时限流；设置页可随时手动检查，手动检查不受节流影响。
-- 只有成功拿到 GitHub 的响应才记录检查时间：网络不通不会让下一次检查被压后 24 小时；被限流（403/429）则退避一天，避免每次启动都去撞墙。
-- 发现 `tag_name` 的语义版本高于本机 `versionName` 时弹窗展示版本号与发布说明，发布说明按 Markdown 简化渲染（标题、列表、加粗、行内代码、链接）。「稍后」忽略该版本（记住版本号，直到出现更新的版本才再提示）；「取消」或返回键只关闭弹窗，不记录忽略。
-- 「下载」把 APK 流式写入 `cache/updates` 并显示进度；下载使用独立的 OkHttp 客户端，只限制单次读超时，慢速链路上不会因整体超时被截断。安装成功后清理缓存目录。
+- 启动时最多每天检查一次最新发布，24 小时内不重复请求；设置页可随时手动检查，手动检查不受节流影响。
+- 检查优先读取 `releases/latest/download/update.json`（发布流水线随每个版本上传的静态文件），不消耗 GitHub API 配额；该文件缺失时才回退到 `/repos/.../releases/latest` 接口。
+- `update.json` 里的 `apkUrl` 固定到具体 tag，所以接受 1.1.0 的用户即使期间发布了 1.2.0，下载到的仍是 1.1.0 的包。
+- 只有成功拿到响应才记录检查时间：网络不通不会让下一次检查被压后 24 小时；被限流（403/429）则退避一天，避免每次启动都去撞墙。
+- 发现新版本时弹窗展示版本号与发布说明，发布说明按 Markdown 简化渲染（标题、列表、加粗、行内代码、链接）。「稍后」忽略该版本（记住版本号，直到出现更新的版本才再提示）；「取消」或返回键只关闭弹窗，不记录忽略。
+- 「下载」把 APK 流式写入 `cache/updates` 并显示进度；下载使用独立的 OkHttp 客户端，只限制单次读超时，慢速链路上不会因整体超时被截断。若 `update.json` 提供了 `apkSha256`，下载完成后校验，不匹配则删除并提示重新下载。安装成功后清理缓存目录。
 - 首次安装需要用户允许「安装未知应用」；授权后回到应用会自动刷新按钮状态。APK 通过 `FileProvider`（`${applicationId}.updates`）交给系统安装器。
-- 覆盖安装要求签名一致：CI 使用仓库 secrets 里的 keystore 构建 Release，见 `AGENTS.md` 的发布流程。Debug 包名带 `.debug`，不参与更新检查。
+- 覆盖安装要求签名一致：CI 使用仓库 secrets 里的 keystore 构建 Release，见 `AGENTS.md` 的发布流程。未签名的构建不会发布 `update.json`，客户端因此回退到 API，只提供「在浏览器中打开」。
 - 网络失败、限流或解析失败都不打扰用户，错误只在更新弹窗或手动检查时提示。
-- `UPDATE_FEED_URL` 只是 Debug 的测试接缝：Release 构建在 `app/build.gradle.kts` 里被硬编码为空，即使误传 `-Papp.updateFeedUrl` 也只会走真实 GitHub 地址。
+- `UPDATE_FEED_URL` 只是 Debug 的测试接缝：Release 构建在 `app/build.gradle.kts` 里被硬编码为空，即使误传 `-Papp.updateFeedUrl` 也只会走真实发布渠道。
 
 本地验证整条链路（无需发布新版本）：
 
 ```bash
 node tools/mock-update-feed.js 18082 app/build/outputs/apk/debug/app-debug.apk v9.9.9
-./gradlew :app:assembleDebug -Papp.updateFeedUrl=http://10.0.2.2:18082/latest
+./gradlew :app:assembleDebug -Papp.updateFeedUrl=http://10.0.2.2:18082/latest/update.json
 ```
 
-`-Papp.updateFeedUrl` 会写入 `BuildConfig.UPDATE_FEED_URL`；不传该参数时始终使用真实的 GitHub 发布地址。
+给 `mock-update-feed.js` 传第 5 个参数可以伪造一个错误的 sha256，用来验证校验失败路径：
+
+```bash
+node tools/mock-update-feed.js 18082 app/build/outputs/apk/debug/app-debug.apk v9.9.9 deadbeef...
+```
+
+`-Papp.updateFeedUrl` 会写入 `BuildConfig.UPDATE_FEED_URL`；不传该参数时始终使用真实的发布渠道。Release 构建会忽略它。
 
 ## 离线与冲突
 

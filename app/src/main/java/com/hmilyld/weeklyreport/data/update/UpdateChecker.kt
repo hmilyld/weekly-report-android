@@ -11,19 +11,24 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 
 /**
- * Reads the newest GitHub release for this repository.
+ * Reads the newest release of this repository.
  *
  * The app is self-hosted and distributed as an APK through GitHub Releases, so
  * the release channel *is* the update channel: no Play services, no extra
- * backend endpoint. Anonymous calls are limited to 60 requests per hour per IP,
- * which is why [check] throttles itself to once a day unless forced.
+ * backend endpoint.
+ *
+ * The primary source is the `update.json` asset attached to each release and
+ * fetched through `releases/latest/download/`, a plain static file that is not
+ * subject to the API's 60-requests-per-hour-per-IP anonymous limit. When the
+ * asset is absent — a release published before the workflow produced it — the
+ * check falls back to the API.
  */
 class UpdateChecker(
     private val settings: SettingsStore,
     private val client: OkHttpClient = defaultClient(),
-    // A build-time seam: production always points at the GitHub API, while a
-    // local build can aim at a mock feed to exercise the whole flow offline.
-    private val latestUrl: String = BuildConfig.UPDATE_FEED_URL.ifBlank { LATEST_RELEASE_URL },
+    // A build-time seam: production always points at the real release channel,
+    // while a local build can aim at a mock feed to exercise the flow offline.
+    private val manifestUrl: String = BuildConfig.UPDATE_FEED_URL.ifBlank { LATEST_MANIFEST_URL },
     private val now: () -> Long = System::currentTimeMillis,
 ) {
     suspend fun check(force: Boolean = false): UpdateCheckResult {
@@ -72,11 +77,33 @@ class UpdateChecker(
         settings.setSkippedUpdateVersion(version)
     }
 
-    /** The latest published release, or null when the repository has none. */
-    suspend fun fetchLatest(): UpdateInfo? =
+    /**
+     * The latest release, or null when the repository has none.
+     *
+     * The manifest is tried first so a normal check costs no API quota; only a
+     * missing or unreadable manifest reaches the API.
+     */
+    suspend fun fetchLatest(): UpdateInfo? = fetchManifest() ?: fetchLatestFromApi()
+
+    /** Null when the asset is absent or unreadable, so the caller can fall back. */
+    private suspend fun fetchManifest(): UpdateInfo? =
         withContext(Dispatchers.IO) {
             val request = Request.Builder()
-                .url(latestUrl)
+                .url(manifestUrl)
+                .header("Accept", "application/json")
+                .header("User-Agent", "weekly-report-android/${BuildConfig.VERSION_NAME}")
+                .get()
+                .build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return@withContext null
+                UpdateManifest.parse(response.body?.string().orEmpty())
+            }
+        }
+
+    private suspend fun fetchLatestFromApi(): UpdateInfo? =
+        withContext(Dispatchers.IO) {
+            val request = Request.Builder()
+                .url(LATEST_RELEASE_API)
                 .header("Accept", "application/vnd.github+json")
                 // GitHub rejects requests without a User-Agent.
                 .header("User-Agent", "weekly-report-android/${BuildConfig.VERSION_NAME}")
@@ -113,8 +140,13 @@ class UpdateChecker(
 
     companion object {
         const val REPO_SLUG = "hmilyld/weekly-report-android"
-        const val LATEST_RELEASE_URL = "https://api.github.com/repos/$REPO_SLUG/releases/latest"
+        const val LATEST_MANIFEST_URL =
+            "https://github.com/$REPO_SLUG/releases/latest/download/update.json"
+        const val LATEST_RELEASE_API = "https://api.github.com/repos/$REPO_SLUG/releases/latest"
         const val RELEASES_PAGE_URL = "https://github.com/$REPO_SLUG/releases"
+
+        /** The page for one tag, used when a manifest omits `pageUrl`. */
+        fun releasePageUrl(tag: String): String = "https://github.com/$REPO_SLUG/releases/tag/$tag"
 
         const val RATE_LIMITED = "GitHub 暂时限制了检查频率，请稍后再试"
         const val NETWORK_FAILURE = "无法连接 GitHub，请检查网络"
@@ -126,6 +158,8 @@ class UpdateChecker(
                 .readTimeout(30, TimeUnit.SECONDS)
                 .callTimeout(60, TimeUnit.SECONDS)
                 .retryOnConnectionFailure(true)
+                // releases/latest/download/ redirects to the CDN host.
+                .followRedirects(true)
                 .build()
 
         /**
@@ -138,6 +172,7 @@ class UpdateChecker(
                 .connectTimeout(15, TimeUnit.SECONDS)
                 .readTimeout(60, TimeUnit.SECONDS)
                 .retryOnConnectionFailure(true)
+                .followRedirects(true)
                 .build()
     }
 }

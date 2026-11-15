@@ -193,10 +193,14 @@ class UpdateViewModel(
                 _state.update {
                     it.copy(
                         phase = UpdatePhase.Idle,
-                        error = if (error is java.io.IOException) {
-                            appContext.getString(R.string.update_download_failed_network)
-                        } else {
-                            error.message ?: appContext.getString(R.string.update_failed)
+                        error = when {
+                            error is UpdateInstaller.ChecksumMismatchException ->
+                                appContext.getString(R.string.update_checksum_failed)
+
+                            error is java.io.IOException ->
+                                appContext.getString(R.string.update_download_failed_network)
+
+                            else -> error.message ?: appContext.getString(R.string.update_failed)
                         },
                     )
                 }

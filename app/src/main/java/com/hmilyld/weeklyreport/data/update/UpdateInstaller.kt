@@ -7,6 +7,7 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import java.io.File
 import java.io.IOException
+import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -46,6 +47,10 @@ object UpdateInstaller {
     /**
      * Streams [info]'s APK into the app cache. [onProgress] receives 0..1 (or
      * -1 while the total size is unknown) and is called on the IO dispatcher.
+     *
+     * When the manifest published a SHA-256 the file is verified before it is
+     * handed on: a truncated or tampered download is deleted and rejected
+     * instead of reaching the package installer.
      */
     suspend fun download(
         context: Context,
@@ -63,6 +68,7 @@ object UpdateInstaller {
             val directory = File(context.cacheDir, "updates").apply { mkdirs() }
             val target = File(directory, "weekly-report-${info.versionName}.apk")
             val partial = File(directory, target.name + ".part")
+            val digest = MessageDigest.getInstance("SHA-256")
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
                     throw IOException("下载失败（${response.code}）")
@@ -77,6 +83,7 @@ object UpdateInstaller {
                             val read = input.read(buffer)
                             if (read <= 0) break
                             output.write(buffer, 0, read)
+                            digest.update(buffer, 0, read)
                             written += read
                             // -1 keeps the bar indeterminate while the total is
                             // unknown, instead of jumping around.
@@ -90,6 +97,14 @@ object UpdateInstaller {
                 partial.delete()
                 throw IOException("下载的安装包是空的，请重试")
             }
+            val expected = info.apkSha256
+            if (!expected.isNullOrBlank()) {
+                val actual = digest.digest().joinToString("") { "%02x".format(it) }
+                if (!actual.equals(expected, ignoreCase = true)) {
+                    partial.delete()
+                    throw ChecksumMismatchException()
+                }
+            }
             if (target.exists()) target.delete()
             if (!partial.renameTo(target)) {
                 partial.delete()
@@ -97,6 +112,9 @@ object UpdateInstaller {
             }
             target
         }
+
+    /** The downloaded bytes do not match the hash the release published. */
+    class ChecksumMismatchException : IOException("安装包校验失败，请重新下载")
 
     /**
      * Launches the system installer for [apk]. Returns false when no installer

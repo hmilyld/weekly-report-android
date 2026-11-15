@@ -90,10 +90,39 @@ jobs:
             printf '\n> 本次 APK 由 CI 构建但未签名，安装前请自行签名或改用本地构建产物。\n' >> release-notes.md
           fi
 
+      # The app reads this static asset instead of the GitHub API, which is
+      # limited to 60 anonymous requests per hour per IP. apkUrl is pinned to
+      # this tag, so a user who accepts 1.1.0 still downloads 1.1.0 even if
+      # 1.2.0 has been published in the meantime.
+      #
+      # An unsigned APK cannot be installed over the release it would replace,
+      # so no manifest is published in that case: the app then falls back to
+      # the API and simply offers the release page.
+      - name: Build update.json
+        run: |
+          if [ ! -f keystore.properties ]; then
+            echo "Unsigned build; skipping update.json so clients keep using the API."
+            exit 0
+          fi
+          version="$(sed -n 's/^app\.versionName=//p' gradle.properties)"
+          version_code="$(sed -n 's/^app\.versionCode=//p' gradle.properties)"
+          apk="$(ls app/build/outputs/apk/release/*.apk | head -n 1)"
+          node tools/write-update-manifest.js \
+            --out update.json \
+            --version "$version" \
+            --code "$version_code" \
+            --tag "${GITHUB_REF_NAME}" \
+            --apk "$apk" \
+            --notes release-notes.md \
+            --repo "${GITHUB_REPOSITORY}"
+
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           name: 周记 ${{ github.ref_name }}
           body_path: release-notes.md
-          files: app/build/outputs/apk/release/*.apk
-          fail_on_unmatched_files: true
+          files: |
+            app/build/outputs/apk/release/*.apk
+            update.json
+          # update.json is absent for an unsigned build, which is expected.
+          fail_on_unmatched_files: false
