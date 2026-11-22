@@ -6,7 +6,7 @@
 
 - 原生 Android 客户端，包名 `com.hmilyld.weeklyreport`；Debug 后缀 `.debug`。
 - Kotlin + Jetpack Compose，单模块 `:app`，手动依赖注入（`AppContainer`），不使用 Hilt/Room/Navigation。
-- 后端是仓库外的 `weekly-report`（FastAPI，`/api/v1`，JWT）。**不得修改后端仓库的任何文件**；接口缺能力时先停下报告。
+- 后端是仓库外的 `weekly-report`（FastAPI，`/api/v1`，JWT + API Token）。**不得修改后端仓库的任何文件**；接口缺能力时先停下报告。
 - 所有改动限于本仓库。
 
 ## 2. 环境与命令
@@ -58,10 +58,10 @@ AppDatabase (SQLite) ──► outbox ──► SyncEngine ──► ApiClient
 
 | 文件 | 职责 |
 | --- | --- |
-| `network/ApiClient.kt` | OkHttp、JWT、错误映射、`_decryption_failed` 检测 |
-| `network/ApiException.kt` | 401/402/网络/解析错误分类 |
-| `data/SessionManager.kt` | 登录、锁定、401/解密失败强制登出 |
-| `data/secure/SecureTokenStore.kt` | Keystore AES-GCM 加密 JWT |
+| `network/ApiClient.kt` | OkHttp、JWT/API Token、错误映射、`_decryption_failed` 检测 |
+| `network/ApiException.kt` | 401/402/409/网络/解析错误分类 |
+| `data/SessionManager.kt` | 登录、锁定、长效 Token 创建与 401 登出 |
+| `data/secure/SecureTokenStore.kt` | Keystore AES-GCM 加密 JWT / API Token |
 | `data/local/AppDatabase.kt` | 日报/待办缓存、outbox、冲突、报告缓存 |
 | `data/sync/SyncEngine.kt` | 按序补发、冲突检测、任务 revision 处理 |
 | `data/sync/SyncScheduler.kt` | WorkManager 唯一队列（`APPEND_OR_REPLACE`） |
@@ -97,21 +97,32 @@ AppDatabase (SQLite) ──► outbox ──► SyncEngine ──► ApiClient
 - 用户选择“用本地覆盖”后，先把冲突时的服务器快照写回本地基线，再重发；否则会再次冲突。
 - 删除同样要在服务器值相对基线发生变化时进入冲突。
 
-### 4.3 401 与 `_decryption_failed`
+### 4.3 401、409 与 `_decryption_failed`
 
-- 任意响应（包括 200）嵌套 `_decryption_failed: true` → `SessionProblem.DECRYPTION_FAILED`。
-- 401 → `SessionProblem.UNAUTHORIZED`。
-- 两者都必须：清空内存 token、清空 Keystore token、回登录页、显示原因；**不得渲染空内容**。
+- 401 → 清空内存 token、清空 Keystore token、回登录页、显示原因。
+- 409 `encryption_key_missing` / `decryption_failed`，以及任意响应（包括 200）中的 `_decryption_failed: true`，都表示服务端内容密钥问题；**不得登出**，也不得渲染空内容，应在当前页面提示。重新登录无法修复这类问题。
 - 登录接口自身的 401 不触发全局登出；修改密码 402 保留会话，401 才登出。
 - 会话处于 `Locked` 时不得发送网络请求；`SyncEngine` 必须检查 `tokenOrNull()`。
 
-### 4.4 Release 安全
+### 4.4 认证与长期 Token
+
+- 首次账号密码登录后，用 JWT 调 `POST /tokens` 创建长期 API Token，之后数据请求统一带 `X-API-Token`；JWT 只用于创建/吊销 Token。
+- Token 与 JWT 都存 Android Keystore；旧安装没有 kind 字段时按 JWT 处理。
+- 凭据（值 + 类型）必须作为一个不可分割的对象整体替换；登录、解锁、升级、退出在同一把锁下更新。不要让请求读到半新半旧的凭据，否则启动升级会偶发 401 并把用户踢回登录页。
+- 401 回调必须携带发起请求时实际使用的凭据；只有它仍是当前凭据时才清会话。旧请求的 401 不能清掉刚刚登录或升级后的新会话。
+- Token 创建/吊销必须固定使用创建时捕获的服务器地址（`baseOverride`）。改服务器期间不得把旧 JWT 发到新地址。
+- `/users/me`、`/auth/change-password`、`/auth/logout`、`/tokens` 仅接受 JWT。Token 模式下设置页只显示用户名与登录方式，改密/角色信息走网页端；提供「吊销本机 Token」入口（输入当前密码换 JWT 后 `DELETE /tokens/{id}`）。
+- 退出登录只清本机 Token；服务端 Token 需通过设置页的吊销入口或网页端删除。
+- 创建 Token 失败（旧后端没有 `/tokens`）回退 JWT，并在设置页提示 24 小时过期。
+
+### 4.5 Release 安全
 
 - Release：`usesCleartextTraffic=false`，`network_security_config` 禁止明文，`UrlRules` 再拒绝 `http://`。
 - Debug：允许明文，仅用于局域网联调。
-- 用户密码绝不落盘；JWT 只能进 Keystore 加密存储；`allowBackup=false`。
+- 用户密码绝不落盘；JWT / API Token 只能进 Keystore 加密存储；`allowBackup=false`。
+- 测试未保存的服务器地址（`healthAt`）与登录请求必须匿名发送，不得携带当前 JWT / Token，避免把凭据发给不可信地址。
 
-### 4.5 UI 一致性
+### 4.6 UI 一致性
 
 - 页面标题统一使用 `ui/components/Common.kt` 的 `ScreenHeader`。它的 kicker 行固定最小高度 `48dp`，以确保有/无右侧操作按钮的页面标题对齐；不要改回自适应高度。
 - 设计语言：暖纸色 + 墨色 + 朱红强调色；标题衬线体，正文无衬线；间距使用 `Spacing`。
@@ -123,15 +134,15 @@ AppDatabase (SQLite) ──► outbox ──► SyncEngine ──► ApiClient
 - 所有可点击元素至少 48dp；破坏性操作必须二次确认。
 - 启动页（`AppRoot`）按窗口宽度切换导航形态：`< 600dp` 用 `NavigationBar`，`>= 600dp` 用 `NavigationRail`；正文区最宽 `840dp` 且水平居中，避免平板上一行拉太长。
 
-### 4.6 列表输入与中文 IME
+### 4.7 列表输入与中文 IME
 
 - 空日报以 `1. ` 开头；回车续号；空条目回车结束列表；保存时去掉末尾空编号条目。
 - 只有“单个换行插入”且 `TextFieldValue.composition == null` 时才可改写文本；组合输入期间必须原样接受。
 - 这条规则在 `util/ListInput.kt` 与 `DailyScreen` 的 `handleValueChange` 中，修改时补单测。
 
-### 4.7 永久失败与 outbox 阻塞
+### 4.8 永久失败与 outbox 阻塞
 
-- 重放时只有认证错误（401 / `_decryption_failed`）与可重试错误（网络、5xx、429）会停止整条队列。
+- 重放时只有认证错误（401）、内容密钥问题（409 / `_decryption_failed`）与可重试错误（网络、5xx、429）会停止整条队列。
 - 其余 4xx（典型场景：离线建了截止日期为过去的待办，第二天联网时后端返回 400/422）以及本地 payload 无法解码，只把该条置为 `OutboxState.FAILED`，然后继续处理后续项；否则一条坏数据会永久堵住所有离线写入。
 - 错误分类集中在 `data/sync/SyncErrorPolicy.kt`，改动分类时同步更新 `SyncErrorPolicyTest`。
 - `FAILED` 项保留在本机，`outboxCounts` 单独计数，`AppRoot` 横幅提示，设置页可看到失败条数；`requeueFailed(owner)` 把它们放回 `PENDING` 之后才会再次发送。
@@ -144,24 +155,34 @@ Base URL 由用户填写，自动补 `/api/v1/`。主要端点：
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| POST | `auth/login` | `{username,password}` → `{access_token}` |
-| POST | `auth/logout` | 清理服务端 key cache |
-| POST | `auth/change-password` | 旧密码错返回 402；成功返回新 token |
-| GET | `users/me` | 当前用户 |
+| POST | `auth/login` | `{username,password}` → `{access_token}`（JWT，24h 过期） |
+| POST | `auth/logout` | 结束 JWT 会话（仅 JWT） |
+| POST | `auth/change-password` | 旧密码错返回 402；成功返回新 JWT |
+| POST | `tokens` | 用 JWT 创建长期 API Token（完整值仅返回一次） |
+| DELETE | `tokens/{id}` | 用 JWT 吊销单个 Token |
+| GET | `users/me` | 当前用户（仅 JWT） |
 | GET | `daily/week/{weekStart}` | 周日报（周一） |
 | GET | `daily?start_date=&end_date=` | 日期范围，重放冲突检测用 |
-| POST | `daily` | `{date,content}` upsert |
+| POST | `daily` | `{date?,content,append?}` upsert；`date` 默认今天 |
 | DELETE | `daily/{date}` | 删除 |
 | GET | `tasks` | 全部待办 |
+| GET | `tasks/pending` | 未完成待办 |
 | GET | `tasks/completed?offset=&limit=` | 已完成分页 |
 | POST/PUT/DELETE | `tasks` / `tasks/{id}` | 待办 CRUD |
-| GET/POST/PUT | `weekly/{weekStart}` | 读取（404=未生成）/生成/编辑 |
+| GET | `weekly?limit=` | 最近周报（1–52，默认 12） |
+| GET/POST/PUT | `weekly/{weekStart}` | 读取（404=未生成）/生成（`?force=`）/编辑 |
+| GET | `monthly?limit=` | 最近月报（1–120，默认 12） |
 | GET/POST/PUT | `monthly/{year}/{month}` | 同上 |
 
 注意：
 
+- 数据接口同时接受 JWT 与 `X-API-Token`；两者都带时以 JWT 为准。Android 登录后用 JWT 创建长期 Token，数据请求带 `X-API-Token`，避免 JWT 24 小时过期导致每天重新登录。
+- `/users/me`、`/auth/change-password`、`/auth/logout`、`/tokens` 仅接受 JWT；Token 模式下这些能力在网页端完成。
+- `POST /weekly/{weekStart}` 的 `force` 默认 true；`force=false` 且已存在时返回 `generated=false`。客户端显式传 `force=true`。
+- 409 `encryption_key_missing` / `decryption_failed` 与 `_decryption_failed` 不得当作登录失效；只有 401 登出。
 - 服务端时间戳是无时区的 UTC 字符串，解析时要按 UTC 处理（`Dates.parseServerInstant`）。
 - 后端拒绝“过去日期”的任务 deadline；更新任务时如果 deadline 已过期且用户没有改它，应省略该字段，避免 400。
+- 后端 `PUT /tasks/{id}` 把 `deadline: null` 当作“不修改”，**无法清除截止日期**；当前 UI 的清除入口在服务端不会生效。
 - `kotlinx.serialization` 的 `explicitNulls = false` 会省略 null，任务 deadline 的“清空”必须手工构造 JSON（`ApiClient.updateTask`）。
 - 生成接口可能耗时几十秒，读超时为 180s；UI 必须有忙碌态。
 
@@ -171,6 +192,7 @@ Base URL 由用户填写，自动补 `/api/v1/`。主要端点：
 
 ```bash
 export JWT_SECRET_KEY="$(openssl rand -hex 32)"
+export ENCRYPTION_MASTER_KEY="$(openssl rand -base64 32)"
 docker compose -f docker-compose.local.yml up --build
 ```
 
@@ -182,6 +204,7 @@ uv pip install --python .local-backend/venv/Scripts/python.exe -r ..\weekly-repo
 
 $env:DATABASE_URL = 'sqlite:///<android-repo>/.local-backend/data/weekly_report.db'
 $env:JWT_SECRET_KEY = '<random>'
+$env:ENCRYPTION_MASTER_KEY = '<base64 of 32 bytes>'
 $env:PYTHONIOENCODING = 'utf-8'
 .local-backend/venv/Scripts/python.exe -m uvicorn main:app `
   --app-dir ..\weekly-report\backend --host 0.0.0.0 --port 18081
@@ -198,6 +221,8 @@ $env:PYTHONIOENCODING = 'utf-8'
 - URL 校验（Release 拒绝 HTTP，Debug 允许）；
 - 重放冲突规则；
 - API 错误 detail 与 `_decryption_failed` 检测；
+- 409 `encryption_key_missing` / `decryption_failed` 分类，以及 `requiresLogin` 只认 401；
+- 同步错误策略（解密/密钥缺失停止队列，普通 4xx 只失败该条）；
 - 版本号解析与比较（`SemVer`：前缀、预发布后缀、位数不同的版本、乱码输入）；
 - GitHub 发布 JSON 解析（`ReleaseParser`：真实响应、非 APK 资产、缺少 APK、错误负载）；
 - 更新检查节流与提示规则（`UpdateGate`：首次检查、24h 窗口、开关、时钟回拨、跳过版本、手动检查绕过、构建号比较）；
@@ -211,7 +236,7 @@ $env:PYTHONIOENCODING = 'utf-8'
 
 - 模拟器：`E:\Androiddev\sdk\emulator\emulator.exe -avd Pixel_8_API_35 -no-window -gpu swiftshader_indirect`。
 - 真机：无线调试需先 `adb pair IP:PAIR_PORT CODE`，再 `adb connect IP:CONNECT_PORT`（两个端口不同，连接端口在「无线调试」主页面）。
-- 验收重点：登录 → 日报保存 → 杀进程重开 → 删除 → 翻周；待办全流程；周报 404/生成/编辑/分享；离线写→联网补发；冲突提示；后端重启后强制重新登录；小部件、通知、分享、生物识别。
+- 验收重点：登录（首次创建长期 Token）→ 日报保存 → 杀进程重开仍在线 → 删除 → 翻周；待办全流程；周报 404/生成/编辑/分享；离线写→联网补发；冲突提示；后端重启后仍保持登录；吊销本机 Token 后回登录页；小部件、通知、分享、生物识别。
 - 更新流程：用 `tools/mock-update-feed.js` 起本地发布源（同时提供 `update.json` 与 APK），`-Papp.updateFeedUrl=http://10.0.2.2:18082/latest/update.json` 构建 Debug 包，走查「启动弹窗 → 下载进度 → 授权 → 系统安装器 → 稍后不再提示 → 取消不记录跳过」。传第 5 个参数伪造错误 sha256 可验证校验失败提示；`tools/mock-backend.js` 可起最小后端用于登录后进入设置页。Release 构建会忽略该参数（更新源固定为空）。
 - `evidence/` 只保留在本地，**不要提交**：真机截图可能包含个人通知、头像、内网地址等隐私。
 - 生物识别需要用户在真机上实际按压指纹；模拟器可用 `adb emu finger touch 1`。
@@ -222,9 +247,12 @@ $env:PYTHONIOENCODING = 'utf-8'
 2. 补发过程中用户继续编辑：用 outbox `revision` 避免误删新 payload；任务 CREATE 成功时若 revision 已变，转成 UPDATE。
 3. WorkManager 队列用 `APPEND_OR_REPLACE`，避免在 drain 结束时丢掉刚到的请求。
 4. 会话锁定（生物识别）时没有 token，不能补发，否则 401 会把用户登出。
-5. 修改服务器地址会退出登录；这是预期行为，不要保留旧 token 发到新服务器。
+5. 修改服务器地址会退出登录；这是预期行为，不要保留旧凭证发到新服务器。Token 模式下旧服务器的 Token 需到旧服务器网页端吊销。
 6. 小部件读取的是本地 `daily_cache`，保存/同步后要刷新小部件。
 7. 不要把 `evidence/`、`dist/`、签名密钥提交到 Git。
+8. Token 模式下 `users/me`、改密、`auth/logout` 都会 401，这不是会话失效；设置页不要调用它们，改密/角色信息走网页端。
+9. 409 / `_decryption_failed` 不要触发登出；只有 401 才清会话。解密失败时不得把空内容当作“没有数据”。
+10. 退出登录只清本机 Token；没有 JWT 就无法吊销服务端 Token，所以设置页要保留「吊销本机 Token」入口并提示网页端。
 
 ## 10. 完成标准
 
@@ -233,6 +261,7 @@ $env:PYTHONIOENCODING = 'utf-8'
 - lint 0 errors；
 - Release 已签名且只允许 HTTPS；
 - 新增/修改的离线、冲突、认证逻辑有测试或明确的真机验证记录；
+- Token 模式：首次登录创建 Token、杀进程重开后仍在线、吊销后回登录页、改密入口不在 App 内出现；
 - 不修改 `weekly-report` 仓库，不提交任何密钥或个人数据。
 
 ## 11. 发布流程

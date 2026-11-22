@@ -11,6 +11,7 @@ import com.hmilyld.weeklyreport.data.prefs.ThemeMode
 import com.hmilyld.weeklyreport.data.sync.SyncResult
 import com.hmilyld.weeklyreport.network.ApiErrorKind
 import com.hmilyld.weeklyreport.network.ApiException
+import com.hmilyld.weeklyreport.network.AuthKind
 import com.hmilyld.weeklyreport.notifications.TaskNotifier
 import com.hmilyld.weeklyreport.ui.UiMessage
 import com.hmilyld.weeklyreport.util.UrlRules
@@ -37,6 +38,10 @@ data class SettingsUiState(
     val passwordSuccess: Boolean = false,
     val queue: OutboxCounts = OutboxCounts(0, 0),
     val notice: UiMessage? = null,
+    val tokenMode: Boolean = false,
+    val tokenId: Int? = null,
+    val tokenRevoking: Boolean = false,
+    val tokenError: UiMessage? = null,
 )
 
 class SettingsViewModel(
@@ -45,6 +50,8 @@ class SettingsViewModel(
     private val _state = MutableStateFlow(
         SettingsUiState(
             serverInput = UrlRules.displayAddress(container.settings.serverBaseValue()),
+            tokenMode = container.session.authMode.value == AuthKind.API_TOKEN,
+            tokenId = activeTokenId(),
         ),
     )
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
@@ -55,7 +62,11 @@ class SettingsViewModel(
     val theme: StateFlow<ThemeMode> = container.settings.theme
 
     init {
-        refreshUser()
+        // The background JWT→token upgrade can change the mode while this
+        // screen is alive; keep the account section in sync with it.
+        viewModelScope.launch {
+            container.session.authMode.collect { refreshUser() }
+        }
         viewModelScope.launch {
             container.dataVersion.collect { refreshQueue() }
         }
@@ -63,12 +74,41 @@ class SettingsViewModel(
     }
 
     fun refreshUser() {
+        val tokenMode = container.session.authMode.value == AuthKind.API_TOKEN
+        if (tokenMode) {
+            // /users/me accepts JWT only. In token mode the username comes from
+            // the password login that created the token, and role details stay
+            // on the web UI.
+            _state.update {
+                it.copy(
+                    user = localUser(),
+                    tokenMode = true,
+                    tokenId = activeTokenId(),
+                    loadingUser = false,
+                    notice = null,
+                    tokenRevoking = false,
+                    tokenError = null,
+                )
+            }
+            return
+        }
+        _state.update {
+            it.copy(
+                tokenMode = false,
+                tokenId = null,
+                tokenRevoking = false,
+                tokenError = null,
+            )
+        }
         viewModelScope.launch {
             _state.update { it.copy(loadingUser = true) }
             try {
                 val user = container.api.me()
-                _state.update { it.copy(user = user, loadingUser = false, notice = null) }
+                if (container.session.authMode.value == AuthKind.JWT) {
+                    _state.update { it.copy(user = user, loadingUser = false, notice = null) }
+                }
             } catch (error: ApiException) {
+                if (container.session.authMode.value != AuthKind.JWT) return@launch
                 _state.update {
                     it.copy(
                         loadingUser = false,
@@ -82,6 +122,19 @@ class SettingsViewModel(
             }
         }
     }
+
+    private fun localUser(): UserDto =
+        UserDto(
+            id = 0,
+            username = container.session.currentUsername(),
+            role = "",
+        )
+
+    /** The stored token id is only actionable on the server that issued it. */
+    private fun activeTokenId(): Int? =
+        container.settings.apiTokenId()?.takeIf {
+            container.settings.apiTokenServer() == container.settings.serverBaseValue()
+        }
 
     fun updateServerInput(value: String) {
         _state.update { it.copy(serverInput = value, serverError = null, testResult = null) }
@@ -143,6 +196,12 @@ class SettingsViewModel(
         newPassword: String,
         confirm: String,
     ) {
+        if (_state.value.tokenMode) {
+            _state.update {
+                it.copy(passwordError = UiMessage.Text(R.string.settings_password_token_mode))
+            }
+            return
+        }
         when {
             oldPassword.isEmpty() -> {
                 _state.update {
@@ -190,6 +249,52 @@ class SettingsViewModel(
 
     fun clearPasswordError() {
         _state.update { it.copy(passwordError = null) }
+    }
+
+    fun revokeToken(password: String) {
+        val state = _state.value
+        if (!state.tokenMode || state.tokenRevoking) return
+        val tokenId = state.tokenId ?: return
+        if (password.isEmpty()) {
+            _state.update {
+                it.copy(tokenError = UiMessage.Text(R.string.settings_token_password_required))
+            }
+            return
+        }
+        val username = state.user?.username?.takeIf { it.isNotBlank() }
+            ?: container.session.currentUsername()
+        val server = container.settings.serverBaseValue()
+        viewModelScope.launch {
+            _state.update { it.copy(tokenRevoking = true, tokenError = null) }
+            try {
+                // Token management endpoints accept JWT only, so the current
+                // password is needed once to delete this device's token.
+                val jwt = container.api.login(username, password).accessToken
+                if (activeTokenId() == tokenId && container.settings.serverBaseValue() == server) {
+                    try {
+                        container.api.deleteApiToken(jwt, tokenId, server)
+                    } catch (error: ApiException) {
+                        if (!error.isNotFound) throw error
+                    }
+                }
+                container.settings.setApiTokenId(null)
+                container.settings.setApiTokenServer(null)
+                _state.update { it.copy(tokenRevoking = false, tokenError = null) }
+                container.session.logout()
+                _messages.emit(UiMessage.Text(R.string.settings_token_revoked))
+            } catch (error: ApiException) {
+                val message = if (error.status == 401) {
+                    UiMessage.Text(R.string.settings_password_wrong_old)
+                } else {
+                    UiMessage.Raw(error.message)
+                }
+                _state.update { it.copy(tokenRevoking = false, tokenError = message) }
+            }
+        }
+    }
+
+    fun clearTokenError() {
+        _state.update { it.copy(tokenError = null) }
     }
 
     fun consumePasswordSuccess() {

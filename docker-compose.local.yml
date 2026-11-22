@@ -13,6 +13,7 @@ services:
       - ./.local-backend/docker-data:/app/data
     environment:
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:?set JWT_SECRET_KEY before starting the local backend}
+      - ENCRYPTION_MASTER_KEY=${ENCRYPTION_MASTER_KEY:?set ENCRYPTION_MASTER_KEY before starting the local backend}
       - DATABASE_URL=sqlite:///./data/weekly_report.db
     restart: unless-stopped
     healthcheck:

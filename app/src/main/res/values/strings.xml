@@ -176,6 +176,17 @@
     <string name="settings_section_account">账号</string>
     <string name="settings_reading">正在读取…</string>
     <string name="settings_current_user">当前登录用户</string>
+    <string name="settings_token_mode">长期 Token 登录</string>
+    <string name="settings_token_mode_hint">已使用长期 API Token 保持登录；账号信息与修改密码请到网页端处理。</string>
+    <string name="settings_jwt_mode_hint">当前为 JWT 登录，24 小时后需要重新登录；重新登录会尝试创建长期 Token。</string>
+    <string name="settings_revoke_token">吊销本机 Token</string>
+    <string name="settings_revoke_token_title">吊销本机 Token？</string>
+    <string name="settings_revoke_token_body">这会同时在服务器上删除本机使用的 Token，并退出登录。需要输入当前密码确认；其他设备不受影响。</string>
+    <string name="settings_revoke_token_password">当前密码</string>
+    <string name="settings_revoke_token_confirm">吊销并退出</string>
+    <string name="settings_token_revoked">已吊销本机 Token</string>
+    <string name="settings_token_password_required">请输入当前密码</string>
+    <string name="settings_password_token_mode">当前为 Token 登录，请到网页端修改密码</string>
     <string name="settings_role_admin">管理员</string>
     <string name="settings_role_user">普通用户</string>
     <string name="settings_refresh_account">刷新账号</string>
@@ -212,6 +223,7 @@
     <string name="settings_about_desc">数据保存在你的自托管服务器；本机只缓存日报草稿、待办和待发送队列。明文密码从不落盘。</string>
     <string name="settings_logout_title">退出登录？</string>
     <string name="settings_logout_body">本机未发送的草稿会保留，下次登录同一账号后继续发送。</string>
+    <string name="settings_logout_body_token">本机未发送的草稿会保留，下次登录同一账号后继续发送。本机 Token 仍会在服务器上有效；如需立即失效，请先使用「吊销本机 Token」，或到网页端删除。</string>
     <string name="settings_logout_confirm">退出</string>
     <string name="settings_password_intro">修改成功后，服务端会用新密码重新加密全部内容，其他设备需要重新登录。</string>
     <string name="settings_password_current">当前密码</string>
@@ -247,7 +259,7 @@
     <string name="login_hide_password">隐藏密码</string>
     <string name="login_show_password">显示密码</string>
     <string name="login_action">登录</string>
-    <string name="login_footer">密码只用于换取登录令牌，不会保存在设备上；令牌由 Android Keystore 加密。</string>
+    <string name="login_footer">密码只用于换取长期令牌，不会保存在设备上；令牌由 Android Keystore 加密。</string>
     <string name="login_test_success_saved">连接成功，地址已保存</string>
     <string name="login_error_credentials">请填写用户名和密码</string>
     <string name="login_error_wrong_password">用户名或密码错误</string>

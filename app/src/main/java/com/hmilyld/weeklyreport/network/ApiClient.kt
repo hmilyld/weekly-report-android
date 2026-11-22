@@ -1,6 +1,8 @@
 package com.hmilyld.weeklyreport.network
 
 import com.hmilyld.weeklyreport.BuildConfig
+import com.hmilyld.weeklyreport.data.model.ApiTokenCreateRequest
+import com.hmilyld.weeklyreport.data.model.ApiTokenCreatedDto
 import com.hmilyld.weeklyreport.data.model.ChangePasswordRequest
 import com.hmilyld.weeklyreport.data.model.CompletedTaskListResponse
 import com.hmilyld.weeklyreport.data.model.ContentUpdateRequest
@@ -27,11 +29,34 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
+/** Which credential the data endpoints receive. Admin/auth endpoints need JWT. */
+enum class AuthKind { JWT, API_TOKEN }
+
+/**
+ * The credential value and its kind travel as one immutable value. The field
+ * holding it is replaced with a single reference write, so a concurrent request
+ * can never observe a JWT value tagged as an API token (or the reverse).
+ */
+data class ApiCredential(
+    val value: String,
+    val kind: AuthKind,
+)
+
+internal fun authHeaderFor(credential: ApiCredential?): Pair<String, String>? =
+    credential?.let {
+        when (it.kind) {
+            AuthKind.JWT -> "Authorization" to "Bearer ${it.value}"
+            AuthKind.API_TOKEN -> "X-API-Token" to it.value
+        }
+    }
+
 class ApiClient(
     private val settings: SettingsStore,
-) {
-    var tokenProvider: () -> String? = { null }
-    var problemListener: (SessionProblem) -> Unit = {}
+) : SessionApi {
+    @Volatile
+    override var credential: ApiCredential? = null
+
+    override var problemListener: (ApiCredential?) -> Unit = {}
 
     private val json: Json = ApiPayloads.json
     private val mediaType = "application/json; charset=utf-8".toMediaType()
@@ -46,7 +71,7 @@ class ApiClient(
 
     // ─── Auth ───────────────────────────────────────────
 
-    suspend fun login(
+    override suspend fun login(
         username: String,
         password: String,
     ): TokenResponse =
@@ -54,15 +79,16 @@ class ApiClient(
             "auth/login",
             json.encodeToString(LoginRequest.serializer(), LoginRequest(username, password)),
             notifyUnauthorized = false,
+            anonymous = true,
         )
 
-    suspend fun logout() {
+    override suspend fun logout() {
         execute("POST", "auth/logout", null, notifyUnauthorized = false)
     }
 
     suspend fun me(): UserDto = get("users/me")
 
-    suspend fun changePassword(
+    override suspend fun changePassword(
         oldPassword: String,
         newPassword: String,
     ): TokenResponse =
@@ -73,6 +99,38 @@ class ApiClient(
                 ChangePasswordRequest(oldPassword, newPassword),
             ),
         )
+
+    /**
+     * Creates a long-lived API token with the short-lived JWT obtained at login.
+     * Token management endpoints accept JWT only, never X-API-Token. The base URL
+     * is pinned by the caller so a concurrent server change cannot send the old
+     * JWT to another host.
+     */
+    override suspend fun createApiToken(
+        jwt: String,
+        name: String,
+        baseUrl: String,
+    ): ApiTokenCreatedDto =
+        postWithBearer(
+            "tokens",
+            json.encodeToString(ApiTokenCreateRequest.serializer(), ApiTokenCreateRequest(name)),
+            jwt,
+            baseUrl,
+        )
+
+    override suspend fun deleteApiToken(
+        jwt: String,
+        id: Int,
+        baseUrl: String,
+    ) {
+        execute(
+            "DELETE",
+            "tokens/$id",
+            notifyUnauthorized = false,
+            baseOverride = baseUrl,
+            bearerOverride = jwt,
+        )
+    }
 
     // ─── Daily ──────────────────────────────────────────
 
@@ -89,7 +147,10 @@ class ApiClient(
     ): DayReport =
         post(
             "daily",
-            json.encodeToString(DailySaveRequest.serializer(), DailySaveRequest(date, content)),
+            json.encodeToString(
+                DailySaveRequest.serializer(),
+                DailySaveRequest(date, content, append = false),
+            ),
         )
 
     suspend fun deleteDaily(date: String) {
@@ -161,7 +222,11 @@ class ApiClient(
 
     suspend fun weekly(weekStart: String): WeeklyReportDto = get("weekly/$weekStart")
 
-    suspend fun generateWeekly(weekStart: String): WeeklyReportDto = post("weekly/$weekStart", "{}")
+    suspend fun generateWeekly(weekStart: String): WeeklyReportDto =
+        // force=true is the explicit "generate or regenerate" action; keep it
+        // explicit so a future server default change cannot silently reuse an
+        // existing report.
+        post("weekly/$weekStart?force=true", "{}")
 
     suspend fun updateWeekly(
         weekStart: String,
@@ -193,12 +258,19 @@ class ApiClient(
         )
 
     suspend fun health() {
-        execute("GET", "health", null, notifyUnauthorized = false)
+        execute("GET", "health", null, notifyUnauthorized = false, anonymous = true)
     }
 
     /** Test an address that has not been saved yet. */
     suspend fun healthAt(baseUrl: String) {
-        execute("GET", "health", null, notifyUnauthorized = false, baseOverride = baseUrl)
+        execute(
+            "GET",
+            "health",
+            null,
+            notifyUnauthorized = false,
+            baseOverride = baseUrl,
+            anonymous = true,
+        )
     }
 
     // ─── Transport ──────────────────────────────────────
@@ -209,7 +281,34 @@ class ApiClient(
         path: String,
         body: String,
         notifyUnauthorized: Boolean = true,
-    ): T = decode(execute("POST", path, body, notifyUnauthorized))
+        anonymous: Boolean = false,
+    ): T =
+        decode(
+            execute(
+                "POST",
+                path,
+                body,
+                notifyUnauthorized,
+                anonymous = anonymous,
+            ),
+        )
+
+    private suspend inline fun <reified T> postWithBearer(
+        path: String,
+        body: String,
+        bearer: String,
+        baseOverride: String,
+    ): T =
+        decode(
+            execute(
+                "POST",
+                path,
+                body,
+                notifyUnauthorized = false,
+                baseOverride = baseOverride,
+                bearerOverride = bearer,
+            ),
+        )
 
     private suspend inline fun <reified T> put(
         path: String,
@@ -233,6 +332,8 @@ class ApiClient(
         body: String? = null,
         notifyUnauthorized: Boolean = true,
         baseOverride: String? = null,
+        bearerOverride: String? = null,
+        anonymous: Boolean = false,
     ): String =
         withContext(Dispatchers.IO) {
             val base = baseOverride ?: settings.serverBaseValue()
@@ -245,8 +346,17 @@ class ApiClient(
             val builder = Request.Builder()
                 .url(base + path)
                 .header("Accept", "application/json")
-            tokenProvider()?.takeIf { it.isNotBlank() }?.let {
-                builder.header("Authorization", "Bearer $it")
+            // Data endpoints take X-API-Token; account endpoints need Bearer.
+            // bearerOverride is used only while exchanging a JWT for a token.
+            // Login and a not-yet-saved server test must never leak the current
+            // credential to another host.
+            val requestCredential = if (anonymous || bearerOverride != null) null else credential
+            if (bearerOverride != null) {
+                builder.header("Authorization", "Bearer $bearerOverride")
+            } else {
+                authHeaderFor(requestCredential)?.let { (name, value) ->
+                    builder.header(name, value)
+                }
             }
             val requestBody = when (method) {
                 "POST", "PUT" -> (body ?: "{}").toRequestBody(mediaType)
@@ -256,21 +366,27 @@ class ApiClient(
             try {
                 client.newCall(builder.build()).execute().use { response ->
                     val raw = response.body?.string().orEmpty()
+                    if (!response.isSuccessful && response.code == 401) {
+                        val message = ApiPayloads.errorMessage(raw, response.code)
+                        if (notifyUnauthorized) problemListener(requestCredential)
+                        throw ApiException(response.code, message, ApiErrorKind.UNAUTHORIZED)
+                    }
+                    // A successful list can carry _decryption_failed per item.
+                    // Never decode it into empty content: the token is still
+                    // valid, this is a server-side key problem.
                     if (ApiPayloads.decryptionFailed(raw)) {
-                        problemListener(SessionProblem.DECRYPTION_FAILED)
                         throw ApiException(
                             response.code,
-                            "服务器无法解密已保存内容（密钥缓存已丢失），请重新登录以恢复。",
+                            ApiPayloads.decryptionMessage(raw),
                             ApiErrorKind.DECRYPTION,
                         )
                     }
                     if (!response.isSuccessful) {
-                        val message = ApiPayloads.errorMessage(raw, response.code)
-                        if (response.code == 401) {
-                            if (notifyUnauthorized) problemListener(SessionProblem.UNAUTHORIZED)
-                            throw ApiException(response.code, message, ApiErrorKind.UNAUTHORIZED)
-                        }
-                        throw ApiException(response.code, message, ApiErrorKind.HTTP)
+                        throw ApiException(
+                            response.code,
+                            ApiPayloads.errorMessage(raw, response.code),
+                            ApiPayloads.errorKind(response.code, raw),
+                        )
                     }
                     raw
                 }

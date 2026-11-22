@@ -7,14 +7,22 @@ import org.junit.Test
 
 class SyncErrorPolicyTest {
     @Test
-    fun `401 and decryption stop for login`() {
+    fun `401 stops for login but decryption does not`() {
         assertEquals(
             SyncErrorPolicy.Action.NEEDS_LOGIN,
             SyncErrorPolicy.action(ApiException(401, "expired", ApiErrorKind.UNAUTHORIZED)),
         )
+        // The credential is valid; retrying after the server key is fixed is
+        // the honest handling, not sending the user back to the login screen.
         assertEquals(
-            SyncErrorPolicy.Action.NEEDS_LOGIN,
+            SyncErrorPolicy.Action.RETRY_LATER,
             SyncErrorPolicy.action(ApiException(200, "lost key", ApiErrorKind.DECRYPTION)),
+        )
+        assertEquals(
+            SyncErrorPolicy.Action.RETRY_LATER,
+            SyncErrorPolicy.action(
+                ApiException(409, "not migrated", ApiErrorKind.ENCRYPTION_KEY_MISSING),
+            ),
         )
     }
 

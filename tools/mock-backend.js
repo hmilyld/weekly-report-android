@@ -11,6 +11,8 @@ const http = require('http');
 
 const port = Number(process.argv[2] || 18083);
 const token = 'mock-token';
+let nextApiTokenId = 1;
+const apiTokens = new Map();
 
 const user = {
   id: 1,
@@ -28,7 +30,23 @@ function json(res, code, body) {
   res.end(payload);
 }
 
-const server = http.createServer((req, res) => {
+function readBody(req) {
+  return new Promise((resolve) => {
+    let raw = '';
+    req.on('data', (chunk) => {
+      raw += chunk;
+    });
+    req.on('end', () => {
+      try {
+        resolve(raw ? JSON.parse(raw) : {});
+      } catch {
+        resolve({});
+      }
+    });
+  });
+}
+
+const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${port}`);
   const path = url.pathname.replace(/^\/api\/v1/, '');
   console.log(`${new Date().toISOString()} ${req.method} ${path}`);
@@ -38,6 +56,23 @@ const server = http.createServer((req, res) => {
     return json(res, 200, { access_token: token });
   }
   if (path === '/auth/logout') return json(res, 200, {});
+  if (path === '/tokens' && req.method === 'POST') {
+    const body = await readBody(req);
+    const id = nextApiTokenId++;
+    const value = `mock-api-token-${id}`;
+    apiTokens.set(id, value);
+    return json(res, 200, {
+      id,
+      name: body.name || 'default',
+      token: value,
+      created_at: new Date().toISOString(),
+    });
+  }
+  if (path.startsWith('/tokens/') && req.method === 'DELETE') {
+    const id = Number(path.slice('/tokens/'.length));
+    apiTokens.delete(id);
+    return json(res, 200, { message: 'Token deleted' });
+  }
   if (path === '/users/me') return json(res, 200, user);
   if (path.startsWith('/daily')) {
     return json(res, 200, { week_start: url.searchParams.get('week_start') || '', days: [] });
