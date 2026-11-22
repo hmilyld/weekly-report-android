@@ -5,6 +5,8 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import androidx.core.content.edit
+import com.hmilyld.weeklyreport.data.SessionTokenStore
+import com.hmilyld.weeklyreport.network.AuthKind
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -12,16 +14,20 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 /**
- * The JWT is encrypted with an AES-GCM key that never leaves the Android
- * Keystore. The password itself is never written to disk; it is used once for
- * the login request and then forgotten.
+ * The session credential (JWT or long-lived API token) is encrypted with an
+ * AES-GCM key that never leaves the Android Keystore. The password itself is
+ * never written to disk; it is used once for the login request and then
+ * forgotten.
  */
 class SecureTokenStore(
     context: Context,
-) {
+) : SessionTokenStore {
     private val prefs = context.getSharedPreferences("wr_secure_session", Context.MODE_PRIVATE)
 
-    fun saveToken(token: String) {
+    override fun saveToken(
+        token: String,
+        kind: AuthKind,
+    ) {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, key())
         val iv = cipher.iv
@@ -30,10 +36,20 @@ class SecureTokenStore(
             System.arraycopy(iv, 0, it, 0, iv.size)
             System.arraycopy(encrypted, 0, it, iv.size, encrypted.size)
         }
-        prefs.edit { putString(KEY_PACKED, Base64.encodeToString(packed, Base64.NO_WRAP)) }
+        prefs.edit {
+            putString(KEY_PACKED, Base64.encodeToString(packed, Base64.NO_WRAP))
+            putString(KEY_KIND, kind.name)
+        }
     }
 
-    fun readToken(): String? {
+    /** Existing installations stored a JWT before the kind field existed. */
+    override fun readKind(): AuthKind =
+        when (prefs.getString(KEY_KIND, null)) {
+            AuthKind.API_TOKEN.name -> AuthKind.API_TOKEN
+            else -> AuthKind.JWT
+        }
+
+    override fun readToken(): String? {
         val packedRaw = prefs.getString(KEY_PACKED, null) ?: return null
         return runCatching {
             val packed = Base64.decode(packedRaw, Base64.NO_WRAP)
@@ -53,8 +69,11 @@ class SecureTokenStore(
 
     fun hasToken(): Boolean = prefs.contains(KEY_PACKED)
 
-    fun clear() {
-        prefs.edit { remove(KEY_PACKED) }
+    override fun clear() {
+        prefs.edit {
+            remove(KEY_PACKED)
+            remove(KEY_KIND)
+        }
     }
 
     private fun key(): SecretKey {
@@ -80,5 +99,6 @@ class SecureTokenStore(
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
         private const val IV_SIZE = 12
         private const val KEY_PACKED = "packed_token"
+        private const val KEY_KIND = "packed_kind"
     }
 }

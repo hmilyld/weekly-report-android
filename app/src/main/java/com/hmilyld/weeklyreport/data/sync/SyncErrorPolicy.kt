@@ -13,6 +13,14 @@ object SyncErrorPolicy {
 
     fun action(error: ApiException): Action {
         if (error.requiresLogin) return Action.NEEDS_LOGIN
+        // The account skipped/failed envelope encryption migration, or the
+        // server cannot decrypt stored content. Retrying later is the honest
+        // signal: the credential is fine, but every queued write would fail.
+        if (error.kind == ApiErrorKind.DECRYPTION ||
+            error.kind == ApiErrorKind.ENCRYPTION_KEY_MISSING
+        ) {
+            return Action.RETRY_LATER
+        }
         return when {
             error.status == 429 -> Action.RETRY_LATER
             error.status != null && error.status in 500..599 -> Action.RETRY_LATER

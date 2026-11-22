@@ -91,6 +91,7 @@ fun SettingsScreen(
     // an installed release; a mock feed still needs the controls for testing.
     val updateAvailableInThisBuild = !BuildConfig.DEBUG || BuildConfig.UPDATE_FEED_URL.isNotBlank()
     var showPasswordDialog by remember { mutableStateOf(false) }
+    var showRevokeDialog by remember { mutableStateOf(false) }
     var showLogoutConfirm by remember { mutableStateOf(false) }
     var notificationsGranted by remember { mutableStateOf(TaskNotifier.hasPermission(context)) }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -205,13 +206,18 @@ fun SettingsScreen(
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = stringResource(R.string.settings_current_user),
+                            text = if (state.tokenMode) {
+                                stringResource(R.string.settings_token_mode)
+                            } else {
+                                stringResource(R.string.settings_current_user)
+                            },
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        if (state.user?.role != null) {
+                        val role = state.user?.role?.takeIf { it.isNotBlank() }
+                        if (role != null) {
                             Pill(
-                                text = if (state.user?.role == "admin") {
+                                text = if (role == "admin") {
                                     stringResource(R.string.settings_role_admin)
                                 } else {
                                     stringResource(R.string.settings_role_user)
@@ -222,20 +228,36 @@ fun SettingsScreen(
                         }
                     }
                 }
-                IconButton(onClick = viewModel::refreshUser, enabled = !state.loadingUser) {
-                    if (state.loadingUser) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                        )
-                    } else {
-                        Icon(
-                            Icons.Outlined.Refresh,
-                            contentDescription = stringResource(R.string.settings_refresh_account),
-                        )
+                if (!state.tokenMode) {
+                    IconButton(onClick = viewModel::refreshUser, enabled = !state.loadingUser) {
+                        if (state.loadingUser) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Icon(
+                                Icons.Outlined.Refresh,
+                                contentDescription = stringResource(
+                                    R.string.settings_refresh_account,
+                                ),
+                            )
+                        }
                     }
                 }
             }
+            Text(
+                text = stringResource(
+                    if (state.tokenMode) {
+                        R.string.settings_token_mode_hint
+                    } else {
+                        R.string.settings_jwt_mode_hint
+                    },
+                ),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = Spacing.xs),
+            )
             val notice = state.notice
             if (notice != null) {
                 Text(
@@ -245,22 +267,44 @@ fun SettingsScreen(
                     modifier = Modifier.padding(top = Spacing.xs),
                 )
             }
-            Row(
+            FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.md),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                maxItemsInEachRow = 2,
             ) {
-                OutlinedButton(onClick = { showPasswordDialog = true }) {
-                    Icon(
-                        Icons.Outlined.Key,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Text(
-                        stringResource(R.string.settings_change_password),
-                        modifier = Modifier.padding(start = Spacing.xs),
-                    )
+                if (state.tokenMode) {
+                    if (state.tokenId != null) {
+                        OutlinedButton(onClick = { showRevokeDialog = true }) {
+                            Icon(
+                                Icons.Outlined.Key,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Text(
+                                stringResource(R.string.settings_revoke_token),
+                                modifier = Modifier.padding(start = Spacing.xs),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                } else {
+                    OutlinedButton(onClick = { showPasswordDialog = true }) {
+                        Icon(
+                            Icons.Outlined.Key,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text(
+                            stringResource(R.string.settings_change_password),
+                            modifier = Modifier.padding(start = Spacing.xs),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
                 OutlinedButton(
                     onClick = { showLogoutConfirm = true },
@@ -276,6 +320,8 @@ fun SettingsScreen(
                     Text(
                         stringResource(R.string.settings_logout),
                         modifier = Modifier.padding(start = Spacing.xs),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -650,10 +696,26 @@ fun SettingsScreen(
         )
     }
 
+    if (showRevokeDialog) {
+        RevokeTokenDialog(
+            viewModel = viewModel,
+            onDismiss = {
+                viewModel.clearTokenError()
+                showRevokeDialog = false
+            },
+        )
+    }
+
     if (showLogoutConfirm) {
         ConfirmDialog(
             title = stringResource(R.string.settings_logout_title),
-            body = stringResource(R.string.settings_logout_body),
+            body = stringResource(
+                if (state.tokenMode) {
+                    R.string.settings_logout_body_token
+                } else {
+                    R.string.settings_logout_body
+                },
+            ),
             confirmLabel = stringResource(R.string.settings_logout_confirm),
             destructive = true,
             onConfirm = {
@@ -779,6 +841,76 @@ private fun PasswordDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss, enabled = !state.changingPassword) {
+                Text(stringResource(R.string.common_cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun RevokeTokenDialog(
+    viewModel: SettingsViewModel,
+    onDismiss: () -> Unit,
+) {
+    val state by viewModel.state.collectAsState()
+    var password by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = { if (!state.tokenRevoking) onDismiss() },
+        title = {
+            Text(
+                stringResource(R.string.settings_revoke_token_title),
+                style = MaterialTheme.typography.titleLarge,
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(R.string.settings_revoke_token_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = {
+                        password = it
+                        viewModel.clearTokenError()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = Spacing.sm),
+                    label = { Text(stringResource(R.string.settings_revoke_token_password)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                )
+                val error = state.tokenError
+                if (error != null) {
+                    Text(
+                        text = error.asText(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = Spacing.sm),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { viewModel.revokeToken(password) },
+                enabled = !state.tokenRevoking,
+            ) {
+                if (state.tokenRevoking) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.size(Spacing.xs))
+                }
+                Text(
+                    stringResource(R.string.settings_revoke_token_confirm),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !state.tokenRevoking) {
                 Text(stringResource(R.string.common_cancel))
             }
         },

@@ -33,7 +33,8 @@
 
 ### 设置
 - 服务器地址：首次启动必填，之后可修改（修改后重新登录）；
-- 登录 / 退出、当前用户、修改密码；
+- 登录 / 退出、当前用户；首次登录后自动创建长期 API Token，之后免每天登录；
+- Token 模式下账号信息与修改密码在网页端处理，App 内提供「吊销本机 Token」；
 - 主题跟随系统 / 浅色 / 深色；
 - 生物识别开关、通知权限入口、小部件添加、离线队列状态；
 - 更新：自动检查开关、手动检查、当前版本与发布渠道；
@@ -71,6 +72,18 @@ node tools/mock-update-feed.js 18082 app/build/outputs/apk/debug/app-debug.apk v
 
 `-Papp.updateFeedUrl` 会写入 `BuildConfig.UPDATE_FEED_URL`；不传该参数时始终使用真实的发布渠道。Release 构建会忽略它。
 
+## 免每天登录
+
+后端 JWT 默认 24 小时过期。为避免每天重新登录，客户端在首次账号密码登录成功后会：
+
+1. 用刚拿到的 JWT 调用 `POST /api/v1/tokens` 创建一个名为「Android 客户端」的长期 API Token；
+2. 只把 Token 存进 Android Keystore，后续数据请求统一带 `X-API-Token`；
+3. 再次登录时尝试吊销上一次创建的 Token，避免服务端累积。
+
+Token 模式下 `/users/me` 与改密接口只接受 JWT，所以 App 不再内置改密：账号信息与密码修改请在网页端完成。设置页仍提供「吊销本机 Token」，需要输入当前密码换取 JWT 后调用 `DELETE /api/v1/tokens/{id}`。
+
+旧后端没有 `/tokens` 时自动回退 JWT，设置页会提示 24 小时后需要重新登录。
+
 ## 离线与冲突
 
 所有写操作先保存到本机 SQLite，再进入按顺序发送的 `outbox`：
@@ -83,14 +96,16 @@ node tools/mock-update-feed.js 18082 app/build/outputs/apk/debug/app-debug.apk v
 ## 安全
 
 - Release 构建只允许 HTTPS；明文 HTTP 仅在 Debug 构建中用于局域网联调。
-- 明文密码不落盘；JWT 使用 Android Keystore 的 AES-GCM 密钥加密保存。
-- 后端因重启丢失密钥缓存时，接口会返回 `_decryption_failed`。客户端会立即回到登录页并说明原因，而不是显示空白内容；重新登录后内容恢复。
-- 修改密码时严格区分：`402` 表示当前密码错误（会话保留）；`401` 才会话失效、回登录页。
+- 明文密码不落盘；JWT 与长期 API Token 都使用 Android Keystore 的 AES-GCM 密钥加密保存。
+- 首次账号密码登录后，客户端用 JWT 创建长期 API Token，数据请求改用 `X-API-Token`；JWT 仍只有 24 小时有效期，但不再影响日常使用。
+- 409 `encryption_key_missing` / `decryption_failed` 与响应中的 `_decryption_failed` 表示服务端内容密钥问题；客户端保留会话并提示，不渲染空白内容，也不会用重新登录来“修复”。
+- 只有 401 才会话失效、回登录页；修改密码 `402` 表示当前密码错误（会话保留）。
+- Token 模式下 `/users/me` 与改密接口只接受 JWT，因此 App 把账号管理与改密放到网页端；退出登录只清本机 Token，服务端 Token 可通过设置页「吊销本机 Token」或网页端删除。
 
 ## 环境要求
 
 - Android 8.0（API 26）及以上；
-- 一个可访问的 `weekly-report` 后端（`/api/v1`，JWT）；
+- 一个可访问的 `weekly-report` 后端（`/api/v1`，JWT + API Token；建议 1.2.0 及以上）；
 - Release 包要求 HTTPS 地址；局域网 HTTP 仅用于 Debug 联调。
 
 ## 安装
@@ -102,7 +117,7 @@ node tools/mock-update-feed.js 18082 app/build/outputs/apk/debug/app-debug.apk v
 adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
-首次启动填写服务器地址并登录。服务器需要事先通过后端的 `POST /api/v1/auth/setup` 或管理端创建账号。
+首次启动填写服务器地址并登录一次；客户端会创建长期 API Token 并加密保存，之后不再受 JWT 24 小时过期影响。服务器需要事先通过后端的 `POST /api/v1/auth/setup` 或管理端创建账号。
 
 ## 构建
 
@@ -140,6 +155,7 @@ keyPassword=change-me
 
 ```bash
 export JWT_SECRET_KEY="$(openssl rand -hex 32)"
+export ENCRYPTION_MASTER_KEY="$(openssl rand -base64 32)"
 docker compose -f docker-compose.local.yml up --build
 ```
 
@@ -154,7 +170,7 @@ app/src/main/java/com/hmilyld/weeklyreport/
 ├── AppContainer.kt          手动依赖容器
 ├── MainActivity.kt          单 Activity，小部件/通知深链
 ├── data/
-│   ├── SessionManager.kt    401 / _decryption_failed 恢复
+│   ├── SessionManager.kt    登录、长期 Token、401 登出
 │   ├── local/AppDatabase.kt SQLite 缓存、outbox、冲突
 │   ├── prefs/               服务器地址、主题、生物识别等设置
 │   ├── secure/              Keystore 加密 token

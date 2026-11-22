@@ -75,11 +75,12 @@ class AppContainer(
         }
 
         // A locked session cannot send. When login/unlock makes the token
-        // available again, drain immediately instead of waiting for the next
-        // write or a process restart.
+        // available again, upgrade an old JWT and drain immediately instead of
+        // waiting for the next write or a process restart.
         scope.launch {
             session.state.collect { state ->
                 if (state is SessionState.LoggedIn) {
+                    session.upgradeLegacyJwt()
                     scheduler.requestDrain()
                     syncEngine.drain()
                 }

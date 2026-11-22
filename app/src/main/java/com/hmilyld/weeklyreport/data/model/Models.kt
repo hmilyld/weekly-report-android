@@ -16,6 +16,19 @@ data class TokenResponse(
 )
 
 @Serializable
+data class ApiTokenCreateRequest(
+    val name: String,
+)
+
+@Serializable
+data class ApiTokenCreatedDto(
+    val id: Int,
+    val name: String,
+    val token: String,
+    @SerialName("created_at") val createdAt: String? = null,
+)
+
+@Serializable
 data class SetupStatus(
     @SerialName("needs_setup") val needsSetup: Boolean,
 )
@@ -55,6 +68,7 @@ data class DailyWeekResponse(
 data class DailySaveRequest(
     val date: String,
     val content: String,
+    val append: Boolean = false,
 )
 
 @Serializable
@@ -104,6 +118,8 @@ data class WeeklyReportDto(
     val content: String = "",
     @SerialName("model_name") val modelName: String = "",
     @SerialName("generated_at") val generatedAt: String? = null,
+    /** POST /weekly/{weekStart}?force=false returns false without calling the model. */
+    val generated: Boolean = true,
     @SerialName("_decryption_failed") val decryptionFailed: Boolean = false,
 )
 

@@ -3,6 +3,7 @@ package com.hmilyld.weeklyreport.data.prefs
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import com.hmilyld.weeklyreport.data.SessionSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,7 +23,7 @@ enum class ThemeMode(
 
 class SettingsStore(
     context: Context,
-) {
+) : SessionSettings {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("wr_settings", Context.MODE_PRIVATE)
 
@@ -33,12 +34,12 @@ class SettingsStore(
     val theme: StateFlow<ThemeMode> = _theme.asStateFlow()
 
     private val _biometricEnabled = MutableStateFlow(prefs.getBoolean(KEY_BIOMETRIC, false))
-    val biometricEnabled: StateFlow<Boolean> = _biometricEnabled.asStateFlow()
+    override val biometricEnabled: StateFlow<Boolean> = _biometricEnabled.asStateFlow()
 
     private val _lastUsername = MutableStateFlow(prefs.getString(KEY_LAST_USERNAME, "").orEmpty())
-    val lastUsername: StateFlow<String> = _lastUsername.asStateFlow()
+    override val lastUsername: StateFlow<String> = _lastUsername.asStateFlow()
 
-    fun serverBaseValue(): String = _serverBase.value
+    override fun serverBaseValue(): String = _serverBase.value
 
     fun setServerBase(baseUrl: String) {
         prefs.edit { putString(KEY_SERVER_BASE, baseUrl) }
@@ -55,9 +56,35 @@ class SettingsStore(
         _biometricEnabled.value = enabled
     }
 
-    fun setLastUsername(username: String) {
+    override fun setLastUsername(username: String) {
         prefs.edit { putString(KEY_LAST_USERNAME, username) }
         _lastUsername.value = username
+    }
+
+    /** Server-side id of the long-lived API token this device created. */
+    override fun apiTokenId(): Int? = prefs.getInt(KEY_API_TOKEN_ID, 0).takeIf { it > 0 }
+
+    override fun setApiTokenId(id: Int?) {
+        prefs.edit {
+            if (id == null) remove(KEY_API_TOKEN_ID) else putInt(KEY_API_TOKEN_ID, id)
+        }
+    }
+
+    /**
+     * Token ids are per server. Without this association, changing the server
+     * address could delete an unrelated token that happens to share the id.
+     */
+    override fun apiTokenServer(): String? =
+        prefs.getString(KEY_API_TOKEN_SERVER, null)?.takeIf { it.isNotBlank() }
+
+    override fun setApiTokenServer(server: String?) {
+        prefs.edit {
+            if (server == null) {
+                remove(KEY_API_TOKEN_SERVER)
+            } else {
+                putString(KEY_API_TOKEN_SERVER, server)
+            }
+        }
     }
 
     fun lastDeadlineNoticeDay(): String = prefs.getString(KEY_LAST_DEADLINE_NOTICE, "").orEmpty()
@@ -66,9 +93,9 @@ class SettingsStore(
         prefs.edit { putString(KEY_LAST_DEADLINE_NOTICE, day) }
     }
 
-    fun lastLoginProblem(): String = prefs.getString(KEY_LOGIN_PROBLEM, "").orEmpty()
+    override fun lastLoginProblem(): String = prefs.getString(KEY_LOGIN_PROBLEM, "").orEmpty()
 
-    fun setLoginProblem(message: String?) {
+    override fun setLoginProblem(message: String?) {
         prefs.edit { putString(KEY_LOGIN_PROBLEM, message.orEmpty()) }
     }
 
@@ -104,6 +131,8 @@ class SettingsStore(
         private const val KEY_THEME = "theme"
         private const val KEY_BIOMETRIC = "biometric_enabled"
         private const val KEY_LAST_USERNAME = "last_username"
+        private const val KEY_API_TOKEN_ID = "api_token_id"
+        private const val KEY_API_TOKEN_SERVER = "api_token_server"
         private const val KEY_LAST_DEADLINE_NOTICE = "last_deadline_notice"
         private const val KEY_LOGIN_PROBLEM = "login_problem"
         private const val KEY_AUTO_UPDATE = "auto_update_check"
